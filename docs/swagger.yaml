@@ -1,0 +1,302 @@
+basePath: /api/v1
+definitions:
+  model.KetoResponse:
+    properties:
+      allowed:
+        example: true
+        format: bool
+        type: boolean
+      code:
+        example: 403
+        format: int64
+        type: integer
+      message:
+        example: Access Forbidden
+        type: string
+      reason:
+        example: Subject does not have access
+        type: string
+      request:
+        example: xyz
+        type: string
+      status:
+        example: "403"
+        type: string
+    type: object
+  model.RelationTuple:
+    properties:
+      namespace:
+        example: canvas
+        type: string
+      object:
+        example: project-123
+        type: string
+      relation:
+        example: read
+        type: string
+      subject_id:
+        example: user-123
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: ankit.a@livspace.com
+    name: Ankit
+    url: https://livspace.io
+  description: An auth layer for APIs
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: https://livspace.io
+  title: Ozone API
+  version: "1.0"
+paths:
+  /auth/check:
+    get:
+      consumes:
+      - application/json
+      description: check token and policy
+      parameters:
+      - description: namespace
+        in: path
+        name: namespace
+        required: true
+        type: string
+      - description: subject
+        in: path
+        name: subject_id
+        required: true
+        type: string
+      - description: resource
+        in: path
+        name: object
+        required: true
+        type: string
+      - description: access-type
+        in: path
+        name: relation
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.KetoResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.KetoResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.KetoResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.KetoResponse'
+      summary: auth check
+      tags:
+      - auth
+  /auth/expand:
+    get:
+      consumes:
+      - application/json
+      description: expand relation tuple
+      parameters:
+      - description: namespace
+        in: path
+        name: namespace
+        required: true
+        type: string
+      - description: subject
+        in: path
+        name: subject_id
+        required: true
+        type: string
+      - description: resource
+        in: path
+        name: object
+        required: true
+        type: string
+      - description: access-type
+        in: path
+        name: relation
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.KetoResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.KetoResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.KetoResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.KetoResponse'
+      summary: expand relation tuple
+      tags:
+      - auth
+  /auth/relation_tuples:
+    delete:
+      consumes:
+      - application/json
+      description: delete relation tuple
+      parameters:
+      - description: Relation Data
+        in: body
+        name: relation_tuple
+        required: true
+        schema:
+          $ref: '#/definitions/model.RelationTuple'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.KetoResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.KetoResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.KetoResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.KetoResponse'
+      summary: delete relation tuple
+      tags:
+      - auth
+    get:
+      consumes:
+      - application/json
+      description: query relation tuple
+      parameters:
+      - description: namespace
+        in: path
+        name: namespace
+        required: true
+        type: string
+      - description: subject
+        in: path
+        name: subject_id
+        required: true
+        type: string
+      - description: resource
+        in: path
+        name: object
+        required: true
+        type: string
+      - description: access-type
+        in: path
+        name: relation
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.KetoResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.KetoResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.KetoResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.KetoResponse'
+      summary: query relation tuple
+      tags:
+      - auth
+    put:
+      consumes:
+      - application/json
+      description: create relation tuple
+      parameters:
+      - description: Relation Data
+        in: body
+        name: relation_tuple
+        required: true
+        schema:
+          $ref: '#/definitions/model.RelationTuple'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.KetoResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.KetoResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.KetoResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.KetoResponse'
+      summary: create relation tuple
+      tags:
+      - auth
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: check health
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: health check
+      tags:
+      - health
+schemes:
+- http
+swagger: "2.0"

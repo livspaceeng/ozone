@@ -1,0 +1,9 @@
+log:
+  level: info
+hydra:
+  url: http://localhost:8080
+keto:
+  read:
+    url: http://localhost:4466
+  write:
+    url: localhost:4467
