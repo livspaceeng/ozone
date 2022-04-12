@@ -1,9 +1,13 @@
 log:
   level: info
 hydra:
-  url: http://localhost:8080
+  url: http://localhost:4445
+  path:
+    introspect: /oauth2/introspect
 keto:
   read:
     url: http://localhost:4466
+    path:
+      check: /check
   write:
     url: localhost:4467

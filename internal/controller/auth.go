@@ -40,7 +40,7 @@ func (a AuthController) Check(c *gin.Context) {
 
 	//Hydra
 	hydraUrl := config.GetString("hydra.url")
-	hydraPath := "/hydra/oauth2/introspect"
+	hydraPath := config.GetString("hydra.path.introspect")
 	u, _ := url.ParseRequestURI(hydraUrl)
 	u.Path = hydraPath
 	headers := c.Request.Header
@@ -75,7 +75,7 @@ func (a AuthController) Check(c *gin.Context) {
 
 	//Keto
 	ketoUrl := config.GetString("keto.read.url")
-	ketoPath := "/check"
+	ketoPath := config.GetString("keto.read.path.check")
 	ketoRequest, _ := http.NewRequest(http.MethodGet, ketoUrl+ketoPath, nil)
 	ketoRequest.Header.Add("Accept", "application/json")
 	q := ketoRequest.URL.Query()
