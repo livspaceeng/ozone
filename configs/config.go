@@ -24,7 +24,8 @@ func Init() {
 
 func setDefaults(config *viper.Viper) {
 	config.SetDefault("log.level", "info")
-	config.SetDefault("hydra.url", "localhost:8080")
+	config.SetDefault("server.address", ":32123")
+	config.SetDefault("hydra.url", "localhost:4445")
 	config.SetDefault("keto.read.url", "localhost:4466")
 	config.SetDefault("keto.write.url", "localhost:4467")
 }
