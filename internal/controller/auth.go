@@ -165,7 +165,11 @@ func (a AuthController) Create(c *gin.Context) {
 						Namespace: relation.Namespace,
 						Object:    relation.Object,
 						Relation:  relation.Relation,
-						Subject:   &acl.Subject{Ref: &acl.Subject_Id{Id: relation.Subject_Id}},
+						Subject:   &acl.Subject{Ref: &acl.Subject_Set{Set: &acl.SubjectSet{
+							Namespace: relation.Subject_Set.Namespace,
+							Object:    relation.Subject_Set.Object,
+							Relation:  relation.Subject_Set.Relation,
+						}}},
 					},
 				},
 			},
