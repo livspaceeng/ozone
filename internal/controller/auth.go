@@ -123,6 +123,7 @@ func (a AuthController) Check(c *gin.Context) {
 func (a AuthController) Create(c *gin.Context) {
 	config := configs.GetConfig()
 	var relation model.RelationTuple
+	var subject_set model.SubjectSet
 	err := json.NewDecoder(c.Request.Body).Decode(&relation)
 	if err != nil {
 		log.Error("Decoding error: ", err.Error())
@@ -137,7 +138,7 @@ func (a AuthController) Create(c *gin.Context) {
 	}
 	client := acl.NewWriteServiceClient(conn)
 
-	if relation.Subject_Id != nil {
+	if len(relation.Subject_Id) > 0 {
 		_, err = client.TransactRelationTuples(context.Background(), &acl.TransactRelationTuplesRequest{
 			RelationTupleDeltas: []*acl.RelationTupleDelta{
 				{
@@ -156,8 +157,7 @@ func (a AuthController) Create(c *gin.Context) {
 			c.AbortWithError(http.StatusBadRequest, err)
 			return 
 		}
-	}
-	else if relation.Subject_Set != nil {
+	} else {
 		_, err = client.TransactRelationTuples(context.Background(), &acl.TransactRelationTuplesRequest{
 			RelationTupleDeltas: []*acl.RelationTupleDelta{
 				{
@@ -166,7 +166,7 @@ func (a AuthController) Create(c *gin.Context) {
 						Namespace: relation.Namespace,
 						Object:    relation.Object,
 						Relation:  relation.Relation,
-						Subject:   &acl.Subject{Ref: &acl.Subject_Set{Set: &acl.Subject_Set{
+						Subject:   &acl.Subject{Ref: &acl.Subject_Set{Set: relation.Subject_Set{
 							Namespace: relation.Subject_Set.Namespace,
 							Object:    relation.Subject_Set.Object,
 							Relation:  relation.Subject_Set.Relation,
