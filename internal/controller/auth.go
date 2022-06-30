@@ -123,7 +123,6 @@ func (a AuthController) Check(c *gin.Context) {
 func (a AuthController) Create(c *gin.Context) {
 	config := configs.GetConfig()
 	var relation model.RelationTuple
-	var subject_set model.SubjectSet
 	err := json.NewDecoder(c.Request.Body).Decode(&relation)
 	if err != nil {
 		log.Error("Decoding error: ", err.Error())
@@ -166,11 +165,7 @@ func (a AuthController) Create(c *gin.Context) {
 						Namespace: relation.Namespace,
 						Object:    relation.Object,
 						Relation:  relation.Relation,
-						Subject:   &acl.Subject{Ref: &acl.Subject_Set{Set: relation.Subject_Set{
-							Namespace: relation.Subject_Set.Namespace,
-							Object:    relation.Subject_Set.Object,
-							Relation:  relation.Subject_Set.Relation,
-						}}},
+						Subject:   &acl.Subject{Ref: &acl.Subject_Id{Id: relation.Subject_Id}},
 					},
 				},
 			},
