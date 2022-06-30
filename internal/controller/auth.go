@@ -137,22 +137,49 @@ func (a AuthController) Create(c *gin.Context) {
 	}
 	client := acl.NewWriteServiceClient(conn)
 
-	_, err = client.TransactRelationTuples(context.Background(), &acl.TransactRelationTuplesRequest{
-		RelationTupleDeltas: []*acl.RelationTupleDelta{
-			{
-				Action: acl.RelationTupleDelta_INSERT,
-				RelationTuple: &acl.RelationTuple{
-					Namespace: relation.Namespace,
-					Object:    relation.Object,
-					Relation:  relation.Relation,
-					Subject:   &acl.Subject{Ref: &acl.Subject_Id{Id: relation.Subject_Id}},
+	if relation.Subject_Id != nil {
+		_, err = client.TransactRelationTuples(context.Background(), &acl.TransactRelationTuplesRequest{
+			RelationTupleDeltas: []*acl.RelationTupleDelta{
+				{
+					Action: acl.RelationTupleDelta_INSERT,
+					RelationTuple: &acl.RelationTuple{
+						Namespace: relation.Namespace,
+						Object:    relation.Object,
+						Relation:  relation.Relation,
+						Subject:   &acl.Subject{Ref: &acl.Subject_Id{Id: relation.Subject_Id}},
+					},
 				},
 			},
-		},
-	})
-	if err != nil {
-		log.Error("Encountered error: ", err.Error())
-		c.AbortWithError(http.StatusBadRequest, err)
+		})
+		if err != nil {
+			log.Error("Encountered error: ", err.Error())
+			c.AbortWithError(http.StatusBadRequest, err)
+			return 
+		}
+	}
+	else if relation.Subject_Set != nil {
+		_, err = client.TransactRelationTuples(context.Background(), &acl.TransactRelationTuplesRequest{
+			RelationTupleDeltas: []*acl.RelationTupleDelta{
+				{
+					Action: acl.RelationTupleDelta_INSERT,
+					RelationTuple: &acl.RelationTuple{
+						Namespace: relation.Namespace,
+						Object:    relation.Object,
+						Relation:  relation.Relation,
+						Subject:   &acl.Subject{Ref: &acl.Subject_Set{Set: &acl.Subject_Set{
+							Namespace: relation.Subject_Set.Namespace,
+							Object:    relation.Subject_Set.Object,
+							Relation:  relation.Subject_Set.Relation,
+						}}},
+					},
+				},
+			},
+		})
+		if err != nil {
+			log.Error("Encountered error: ", err.Error())
+			c.AbortWithError(http.StatusBadRequest, err)
+			return 
+		}
 	}
 
 	log.Info("Successfully created tuple!")
