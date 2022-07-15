@@ -137,7 +137,7 @@ func (a AuthController) Create(c *gin.Context) {
 	}
 	client := acl.NewWriteServiceClient(conn)
 
-	for _, relation := range batch.Relation_Tuple {
+	for _, relation := range batch {
 		if len(relation.Subject_Id) > 0 {
 			_, err = client.TransactRelationTuples(context.Background(), &acl.TransactRelationTuplesRequest{
 				RelationTupleDeltas: []*acl.RelationTupleDelta{
