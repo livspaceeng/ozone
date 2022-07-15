@@ -122,13 +122,13 @@ func (a AuthController) Check(c *gin.Context) {
 // @Router       /auth/relation_tuples [put]
 func (a AuthController) Create(c *gin.Context) {
 	config := configs.GetConfig()
-	var relation model.RelationTuple
-	err := json.NewDecoder(c.Request.Body).Decode(&relation)
+	var batch model.TupleBatch
+	err := json.NewDecoder(c.Request.Body).Decode(&batch)
 	if err != nil {
 		log.Error("Decoding error: ", err.Error())
 		c.AbortWithError(http.StatusBadRequest, err)
 	}
-	log.Info("Relation: ", relation)
+	log.Info("Relation Tuples: ", batch)
 
 	conn, err := grpc.Dial(config.GetString("keto.write.url"), grpc.WithInsecure())
 	if err != nil {
@@ -137,52 +137,53 @@ func (a AuthController) Create(c *gin.Context) {
 	}
 	client := acl.NewWriteServiceClient(conn)
 
-	if len(relation.Subject_Id) > 0 {
-		_, err = client.TransactRelationTuples(context.Background(), &acl.TransactRelationTuplesRequest{
-			RelationTupleDeltas: []*acl.RelationTupleDelta{
-				{
-					Action: acl.RelationTupleDelta_INSERT,
-					RelationTuple: &acl.RelationTuple{
-						Namespace: relation.Namespace,
-						Object:    relation.Object,
-						Relation:  relation.Relation,
-						Subject:   &acl.Subject{Ref: &acl.Subject_Id{Id: relation.Subject_Id}},
+	for _, relation := range batch.Relation_Tuple {
+		if len(relation.Subject_Id) > 0 {
+			_, err = client.TransactRelationTuples(context.Background(), &acl.TransactRelationTuplesRequest{
+				RelationTupleDeltas: []*acl.RelationTupleDelta{
+					{
+						Action: acl.RelationTupleDelta_INSERT,
+						RelationTuple: &acl.RelationTuple{
+							Namespace: relation.Namespace,
+							Object:    relation.Object,
+							Relation:  relation.Relation,
+							Subject:   &acl.Subject{Ref: &acl.Subject_Id{Id: relation.Subject_Id}},
+						},
 					},
 				},
-			},
-		})
-		if err != nil {
-			log.Error("Encountered error: ", err.Error())
-			c.AbortWithError(http.StatusBadRequest, err)
-			return 
-		}
-	} else {
-		_, err = client.TransactRelationTuples(context.Background(), &acl.TransactRelationTuplesRequest{
-			RelationTupleDeltas: []*acl.RelationTupleDelta{
-				{
-					Action: acl.RelationTupleDelta_INSERT,
-					RelationTuple: &acl.RelationTuple{
-						Namespace: relation.Namespace,
-						Object:    relation.Object,
-						Relation:  relation.Relation,
-						Subject:   &acl.Subject{Ref: &acl.Subject_Set{Set: &acl.SubjectSet{
-							Namespace: relation.Subject_Set.Namespace,
-							Object:    relation.Subject_Set.Object,
-							Relation:  relation.Subject_Set.Relation,
-						}}},
+			})
+			if err != nil {
+				log.Error("Encountered error: ", err.Error())
+				c.AbortWithError(http.StatusBadRequest, err)
+				return 
+			}
+		} else {
+			_, err = client.TransactRelationTuples(context.Background(), &acl.TransactRelationTuplesRequest{
+				RelationTupleDeltas: []*acl.RelationTupleDelta{
+					{
+						Action: acl.RelationTupleDelta_INSERT,
+						RelationTuple: &acl.RelationTuple{
+							Namespace: relation.Namespace,
+							Object:    relation.Object,
+							Relation:  relation.Relation,
+							Subject:   &acl.Subject{Ref: &acl.Subject_Set{Set: &acl.SubjectSet{
+								Namespace: relation.Subject_Set.Namespace,
+								Object:    relation.Subject_Set.Object,
+								Relation:  relation.Subject_Set.Relation,
+							}}},
+						},
 					},
 				},
-			},
-		})
-		if err != nil {
-			log.Error("Encountered error: ", err.Error())
-			c.AbortWithError(http.StatusBadRequest, err)
-			return 
+			})
+			if err != nil {
+				log.Error("Encountered error: ", err.Error())
+				c.AbortWithError(http.StatusBadRequest, err)
+				return 
+			}
 		}
+
+		log.Info("Successfully created tuple!")
 	}
-
-	log.Info("Successfully created tuple!")
-
 }
 
 // AuthController godoc
