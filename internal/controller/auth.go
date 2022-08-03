@@ -49,8 +49,9 @@ func (a AuthController) Check(c *gin.Context) {
 		log.Error("Bearer token absent!")
 		c.AbortWithError(http.StatusUnauthorized, nil)
 	}
-	log.Info("token", bearer)
+	log.Info("BToken: ", bearer)
 	token := strings.Split(bearer, " ")[1]
+	log.Info("Token: ", token)
 	data := url.Values{}
 	data.Set("token", token)
 	hydraRequest, _ := http.NewRequest(http.MethodPost, u.String(), strings.NewReader(data.Encode()))
