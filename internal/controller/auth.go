@@ -222,45 +222,37 @@ func (a AuthController) Delete(c *gin.Context) {
 // @Failure      500             {object}  model.KetoResponse
 // @Router       /auth/relation_tuples [get]
 func (a AuthController) Query(c *gin.Context) {
+	httpClient := &http.Client{}
 	config := configs.GetConfig()
-	conn, err := grpc.Dial(config.GetString("keto.write.url"), grpc.WithInsecure())
-	if err != nil {
-		log.Error("Encountered error: ", err.Error())
-		c.AbortWithError(http.StatusInternalServerError, err)
-	}
-	client := acl.NewCheckServiceClient(conn)
+
+	ketoUrl := config.GetString("keto.read.url")
+	ketoPath := config.GetString("keto.read.path.check")
+	ketoRequest, _ := http.NewRequest(http.MethodGet, ketoUrl+ketoPath, nil)
+	ketoRequest.Header.Add("Accept", "application/json")
+
+	q := ketoRequest.URL.Query()
+	q.Add("namespace", c.Query("namespace"))
+	q.Add("object", c.Query("object"))
+	q.Add("relation", c.Query("relation"))
 
 	if len(c.Query("subject_id")) > 0 {
-		res, err := client.Check(context.Background(), &acl.CheckRequest{
-			Namespace: c.Query("namespace"),
-			Object:    c.Query("object"),
-			Relation:  c.Query("relation"),
-			Subject:   &acl.Subject{
-				Ref: &acl.Subject_Id{Id: c.Query("subject_id")},
-			},
-		})
-		c.JSON(200, res)
-		if err != nil {
-			log.Error("Encountered error: ", err.Error())
-			c.AbortWithError(http.StatusBadRequest, err)
-			return 
-		}
+		q.Add("subject_id", c.Query("subject_id"))
 	} else {
-		res, err := client.Check(context.Background(), &acl.CheckRequest{
-			Namespace: c.Query("namespace"),
-			Object:    c.Query("object"),
-			Relation:  c.Query("relation"),
-			Subject:   &acl.Subject{
-				Ref: &acl.Subject_Id{Id: c.Query("subject_id")},
-			},
-		})
-		c.JSON(200, res)
-		if err != nil {
-			log.Error("Encountered error: ", err.Error())
-			c.AbortWithError(http.StatusBadRequest, err)
-			return 
-		}
+		q.Add("subject_set.namespace", c.Query("subject_set.namespace"))
+		q.Add("subject_set.object", c.Query("subject_set.object"))
+		q.Add("subject_set.relation", c.Query("subject_set.relation"))
 	}
+
+	ketoRequest.URL.RawQuery = q.Encode()
+	log.Info(ketoRequest)
+	resp, err := httpClient.Do(ketoRequest)
+
+	if err != nil {
+		log.Error("Errored when sending request to the server", err.Error())
+		c.AbortWithError(http.StatusInternalServerError, err)
+	}
+	defer resp.Body.Close()
+	c.JSON(200, resp)
 }
 
 // AuthController godoc
