@@ -252,7 +252,7 @@ func (a AuthController) Query(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 	}
 	defer resp.Body.Close()
-	c.JSON(200, resp)
+	c.JSON(200, resp.Body)
 }
 
 // AuthController godoc
