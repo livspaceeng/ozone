@@ -222,6 +222,45 @@ func (a AuthController) Delete(c *gin.Context) {
 // @Failure      500             {object}  model.KetoResponse
 // @Router       /auth/relation_tuples [get]
 func (a AuthController) Query(c *gin.Context) {
+	config := configs.GetConfig()
+	conn, err := grpc.Dial(config.GetString("keto.write.url"), grpc.WithInsecure())
+	if err != nil {
+		log.Error("Encountered error: ", err.Error())
+		c.AbortWithError(http.StatusInternalServerError, err)
+	}
+	client := acl.NewCheckServiceClient(conn)
+
+	if len(c.Query("subject_id")) > 0 {
+		res, err := client.Check(context.Background(), &acl.CheckRequest{
+			Namespace: c.Query("namespace"),
+			Object:    c.Query("object"),
+			Relation:  c.Query("relation"),
+			Subject:   &acl.Subject{
+				Ref: &acl.Subject_Id{Id: c.Query("subject_id")},
+			},
+		})
+		c.JSON(200, res)
+		if err != nil {
+			log.Error("Encountered error: ", err.Error())
+			c.AbortWithError(http.StatusBadRequest, err)
+			return 
+		}
+	} else {
+		res, err := client.Check(context.Background(), &acl.CheckRequest{
+			Namespace: c.Query("namespace"),
+			Object:    c.Query("object"),
+			Relation:  c.Query("relation"),
+			Subject:   &acl.Subject{
+				Ref: &acl.Subject_Id{Id: c.Query("subject_id")},
+			},
+		})
+		c.JSON(200, res)
+		if err != nil {
+			log.Error("Encountered error: ", err.Error())
+			c.AbortWithError(http.StatusBadRequest, err)
+			return 
+		}
+	}
 }
 
 // AuthController godoc
