@@ -252,7 +252,15 @@ func (a AuthController) Query(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 	}
 	defer resp.Body.Close()
-	c.JSON(200, resp.Body)
+
+	var ketoResponse model.KetoResponse
+	err = json.NewDecoder(resp.Body).Decode(&ketoResponse)
+	if err != nil {
+		log.Error("Decoding error: ", err.Error())
+		c.AbortWithError(http.StatusInternalServerError, err)
+	}
+	log.Info("res", ketoResponse)
+	c.JSON(200, ketoResponse)
 }
 
 // AuthController godoc
