@@ -253,7 +253,7 @@ func (a AuthController) Query(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(c.Request.Body)
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Error("Decoding error: ", err.Error())
 	  	c.AbortWithError(http.StatusInternalServerError, err)
