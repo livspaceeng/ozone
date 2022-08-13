@@ -259,7 +259,7 @@ func (a AuthController) Query(c *gin.Context) {
 		log.Error("Decoding error: ", err.Error())
 		c.AbortWithError(http.StatusInternalServerError, err)
 	}
-	log.Info("res", ketoResponse)
+	log.Info("Keto Response: ", ketoResponse)
 	c.JSON(200, ketoResponse)
 }
 
