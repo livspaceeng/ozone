@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -252,15 +253,20 @@ func (a AuthController) Query(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 	}
 	defer resp.Body.Close()
-
-	var ketoResponse model.KetoResponse
-	err = json.NewDecoder(resp.Body).Decode(&ketoResponse)
+	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
 		log.Error("Decoding error: ", err.Error())
-		c.AbortWithError(http.StatusInternalServerError, err)
+	  	c.AbortWithError(http.StatusInternalServerError, err)
 	}
-	log.Info("Keto Response: ", ketoResponse)
-	c.JSON(200, ketoResponse)
+	c.JSON(http.StatusOK, body)
+	// var ketoResponse model.KetoResponse
+	// err = json.NewDecoder(resp.Body).Decode(&ketoResponse)
+	// if err != nil {
+	// 	log.Error("Decoding error: ", err.Error())
+	// 	c.AbortWithError(http.StatusInternalServerError, err)
+	// }
+	// log.Info("Keto Response: ", ketoResponse)
+	// c.JSON(http.StatusOK, ketoResponse)
 }
 
 // AuthController godoc
