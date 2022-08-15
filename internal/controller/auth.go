@@ -312,6 +312,12 @@ func (a AuthController) Expand(c *gin.Context) {
 	}
 	var body map[string]interface{}
 	json.Unmarshal([]byte(string(encodedBody)), &body)
+
+	_, errBody := body["error"]
+	if errBody {
+		log.Error("Encountered error: ", body["error"])
+		c.JSON(http.StatusBadRequest, body["error"])
+	}
 	log.Info("Response body : ", body)
 	c.JSON(http.StatusOK, body)
 }
