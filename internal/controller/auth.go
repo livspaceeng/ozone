@@ -262,14 +262,6 @@ func (a AuthController) Query(c *gin.Context) {
 	json.Unmarshal([]byte(string(encodedBody)), &body)
 	log.Info("Response body : ", body)
 	c.JSON(http.StatusOK, body)
-	// var ketoResponse model.KetoResponse
-	// err = json.NewDecoder(resp.Body).Decode(&ketoResponse)
-	// if err != nil {
-	// 	log.Error("Decoding error: ", err.Error())
-	// 	c.AbortWithError(http.StatusInternalServerError, err)
-	// }
-	// log.Info("Keto Response: ", ketoResponse)
-	// c.JSON(http.StatusOK, ketoResponse)
 }
 
 // AuthController godoc
@@ -290,4 +282,35 @@ func (a AuthController) Query(c *gin.Context) {
 // @Failure      500             {object}  model.KetoResponse
 // @Router       /auth/expand [get]
 func (a AuthController) Expand(c *gin.Context) {
+	httpClient := &http.Client{}
+	config := configs.GetConfig()
+
+	ketoUrl := config.GetString("keto.read.url")
+	ketoPath := config.GetString("keto.read.path.expand")
+	ketoRequest, _ := http.NewRequest(http.MethodGet, ketoUrl+ketoPath, nil)
+	ketoRequest.Header.Add("Accept", "application/json")
+
+	q := ketoRequest.URL.Query()
+	q.Add("namespace", c.Query("namespace"))
+	q.Add("object", c.Query("object"))
+	q.Add("relation", c.Query("relation"))
+
+	ketoRequest.URL.RawQuery = q.Encode()
+	log.Info(ketoRequest)
+	resp, err := httpClient.Do(ketoRequest)
+
+	if err != nil {
+		log.Error("Errored when sending request to the server", err.Error())
+		c.AbortWithError(http.StatusInternalServerError, err)
+	}
+	defer resp.Body.Close()
+	encodedBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Error("Decoding error: ", err.Error())
+	  	c.AbortWithError(http.StatusInternalServerError, err)
+	}
+	var body map[string]interface{}
+	json.Unmarshal([]byte(string(encodedBody)), &body)
+	log.Info("Response body : ", body)
+	c.JSON(http.StatusOK, body)
 }
