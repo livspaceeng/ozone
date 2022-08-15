@@ -260,6 +260,12 @@ func (a AuthController) Query(c *gin.Context) {
 	}
 	var body map[string]interface{}
 	json.Unmarshal([]byte(string(encodedBody)), &body)
+
+	_, errBody := body["error"]
+	if errBody {
+		log.Error("Encountered error: ", body["error"])
+		c.JSON(http.StatusBadRequest, body["error"])
+	}
 	log.Info("Response body : ", body)
 	c.JSON(http.StatusOK, body)
 }
@@ -294,7 +300,9 @@ func (a AuthController) Expand(c *gin.Context) {
 	q.Add("namespace", c.Query("namespace"))
 	q.Add("object", c.Query("object"))
 	q.Add("relation", c.Query("relation"))
-	q.Add("max-depth", c.Query("max-depth"))
+	if len(c.Query("max-depth")) > 0 {
+		q.Add("max-depth", c.Query("max-depth"))
+	}
 
 	ketoRequest.URL.RawQuery = q.Encode()
 	log.Info(ketoRequest)
