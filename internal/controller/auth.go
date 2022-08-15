@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"encoding/json"
-	// "io/ioutil"
 	"io"
 	"net/http"
 	"net/url"
@@ -259,7 +258,8 @@ func (a AuthController) Query(c *gin.Context) {
 		log.Error("Decoding error: ", err.Error())
 	  	c.AbortWithError(http.StatusInternalServerError, err)
 	}
-	body := string(encodedBody)
+	var body map[string]interface{}
+	json.Unmarshal([]byte(string(encodedBody)), &body)
 	log.Info("Response body : ", body)
 	c.JSON(http.StatusOK, body)
 	// var ketoResponse model.KetoResponse
