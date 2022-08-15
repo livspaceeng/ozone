@@ -294,6 +294,7 @@ func (a AuthController) Expand(c *gin.Context) {
 	q.Add("namespace", c.Query("namespace"))
 	q.Add("object", c.Query("object"))
 	q.Add("relation", c.Query("relation"))
+	q.Add("max-depth", c.Query("max-depth"))
 
 	ketoRequest.URL.RawQuery = q.Encode()
 	log.Info(ketoRequest)
