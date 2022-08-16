@@ -251,12 +251,14 @@ func (a AuthController) Query(c *gin.Context) {
 	if err != nil {
 		log.Error("Errored when sending request to the server", err.Error())
 		c.AbortWithError(http.StatusInternalServerError, err)
+		return
 	}
 	defer resp.Body.Close()
 	encodedBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Error("Decoding error: ", err.Error())
 	  	c.AbortWithError(http.StatusInternalServerError, err)
+		  return
 	}
 	var body map[string]interface{}
 	json.Unmarshal([]byte(string(encodedBody)), &body)
@@ -265,6 +267,7 @@ func (a AuthController) Query(c *gin.Context) {
 	if errBody {
 		log.Error("Encountered error: ", body["error"])
 		c.JSON(http.StatusBadRequest, body["error"])
+		return
 	}
 	log.Info("Response body : ", body)
 	c.JSON(http.StatusOK, body)
@@ -311,12 +314,14 @@ func (a AuthController) Expand(c *gin.Context) {
 	if err != nil {
 		log.Error("Errored when sending request to the server", err.Error())
 		c.AbortWithError(http.StatusInternalServerError, err)
+		return
 	}
 	defer resp.Body.Close()
 	encodedBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Error("Decoding error: ", err.Error())
 	  	c.AbortWithError(http.StatusInternalServerError, err)
+		return
 	}
 	var body map[string]interface{}
 	json.Unmarshal([]byte(string(encodedBody)), &body)
@@ -325,6 +330,7 @@ func (a AuthController) Expand(c *gin.Context) {
 	if errBody {
 		log.Error("Encountered error: ", body["error"])
 		c.JSON(http.StatusBadRequest, body["error"])
+		return
 	}
 	log.Info("Response body : ", body)
 	c.JSON(http.StatusOK, body)
