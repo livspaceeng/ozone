@@ -23,8 +23,6 @@ func NewRouter() *gin.Engine {
 		authResolver.GET("/check", authController.Check)
 		authResolver.GET("/expand", authController.Expand)
 		authResolver.GET("/relation_tuples", authController.Query)
-		authResolver.PUT("/relation_tuples", authController.Create)
-		authResolver.DELETE("/relation_tuples", authController.Delete)
 	}
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))

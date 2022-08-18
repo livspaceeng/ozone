@@ -15,6 +15,7 @@ type HealthController struct{}
 // @Tags         health
 // @Accept       json
 // @Produce      json
+// @Param        Authorization  header    string   true  "Bearer <Bouncer_access_token>" 
 // @Success      200  {string}  OK!
 // @Router       /health [get]
 func (h HealthController) Status(c *gin.Context) {

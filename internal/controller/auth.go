@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -11,9 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/livspaceeng/ozone/configs"
 	"github.com/livspaceeng/ozone/internal/model"
-	acl "github.com/ory/keto/proto/ory/keto/acl/v1alpha1"
 	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
 )
 
 type AuthController struct{}
@@ -25,10 +22,10 @@ type AuthController struct{}
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        namespace   path      string  true  "namespace"
-// @Param        subject_id  path      string  true  "subject"
-// @Param        object      path      string  true  "resource"
-// @Param        relation    path      string  true  "access-type"
+// @Param        namespace      query      string  true  "namespace"
+// @Param        object         query      string  true  "resource"
+// @Param        relation       query      string  true  "access-type"
+// @Param        Authorization  header     string  true  "Bearer <Bouncer_access_token>" 
 // @Success      200         {string}  model.KetoResponse
 // @Failure      400         {object}  model.KetoResponse
 // @Failure      401         {object}  model.KetoResponse
@@ -102,107 +99,13 @@ func (a AuthController) Check(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 	}
 	if !ketoResponse.Allowed {
-		log.Info("Not Allowed!")
+		log.Info("Policy is not created for subject:", hydraResponse.Subject)
+		log.Info("Namespace:", c.Query("namespace"))
+		log.Info("Relation:", c.Query("relation"))
+		log.Info("Object:", c.Query("object"))
 		c.AbortWithStatus(http.StatusForbidden)
 	}
 
-}
-
-// AuthController godoc
-// @Summary      create relation tuple
-// @Schemes      http
-// @Description  create relation tuple
-// @Tags         auth
-// @Accept       json
-// @Produce      json
-// @Param        relation_tuple  body      model.RelationTuple  true  "Relation Data"
-// @Success      200         {string}  model.KetoResponse
-// @Failure      400         {object}  model.KetoResponse
-// @Failure      401         {object}  model.KetoResponse
-// @Failure      403         {object}  model.KetoResponse
-// @Failure      500         {object}  model.KetoResponse
-// @Router       /auth/relation_tuples [put]
-func (a AuthController) Create(c *gin.Context) {
-	config := configs.GetConfig()
-	var batch model.TupleBatch
-	err := json.NewDecoder(c.Request.Body).Decode(&batch)
-	if err != nil {
-		log.Error("Decoding error: ", err.Error())
-		c.AbortWithError(http.StatusBadRequest, err)
-	}
-	log.Info("Relation Tuples: ", batch)
-
-	conn, err := grpc.Dial(config.GetString("keto.write.url"), grpc.WithInsecure())
-	if err != nil {
-		log.Error("Encountered error: ", err.Error())
-		c.AbortWithError(http.StatusInternalServerError, err)
-	}
-	client := acl.NewWriteServiceClient(conn)
-
-	for _, relation := range batch {
-		if len(relation.Subject_Id) > 0 {
-			_, err = client.TransactRelationTuples(context.Background(), &acl.TransactRelationTuplesRequest{
-				RelationTupleDeltas: []*acl.RelationTupleDelta{
-					{
-						Action: acl.RelationTupleDelta_INSERT,
-						RelationTuple: &acl.RelationTuple{
-							Namespace: relation.Namespace,
-							Object:    relation.Object,
-							Relation:  relation.Relation,
-							Subject:   &acl.Subject{Ref: &acl.Subject_Id{Id: relation.Subject_Id}},
-						},
-					},
-				},
-			})
-			if err != nil {
-				log.Error("Encountered error: ", err.Error())
-				c.AbortWithError(http.StatusBadRequest, err)
-				return 
-			}
-		} else {
-			_, err = client.TransactRelationTuples(context.Background(), &acl.TransactRelationTuplesRequest{
-				RelationTupleDeltas: []*acl.RelationTupleDelta{
-					{
-						Action: acl.RelationTupleDelta_INSERT,
-						RelationTuple: &acl.RelationTuple{
-							Namespace: relation.Namespace,
-							Object:    relation.Object,
-							Relation:  relation.Relation,
-							Subject:   &acl.Subject{Ref: &acl.Subject_Set{Set: &acl.SubjectSet{
-								Namespace: relation.Subject_Set.Namespace,
-								Object:    relation.Subject_Set.Object,
-								Relation:  relation.Subject_Set.Relation,
-							}}},
-						},
-					},
-				},
-			})
-			if err != nil {
-				log.Error("Encountered error: ", err.Error())
-				c.AbortWithError(http.StatusBadRequest, err)
-				return 
-			}
-		}
-
-		log.Info("Successfully created tuple!")
-	}
-}
-
-// AuthController godoc
-// @Summary      delete relation tuple
-// @Schemes      http
-// @Description  delete relation tuple
-// @Tags         auth
-// @Accept       json
-// @Produce      json
-// @Param        relation_tuple  body      model.RelationTuple  true  "Relation Data"
-// @Success      200         {string}  model.KetoResponse
-// @Failure      400         {object}  model.KetoResponse
-// @Failure      401         {object}  model.KetoResponse
-// @Failure      403         {object}  model.KetoResponse
-// @Failure      500         {object}  model.KetoResponse
-// @Router       /auth/relation_tuples [delete]
-func (a AuthController) Delete(c *gin.Context) {
 }
 
 // AuthController godoc
@@ -212,10 +115,14 @@ func (a AuthController) Delete(c *gin.Context) {
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        namespace   path      string  true  "namespace"
-// @Param        subject_id  path      string  true  "subject"
-// @Param        object      path      string  true  "resource"
-// @Param        relation    path      string  true  "access-type"
+// @Param        namespace               query      string  true  "namespace"
+// @Param        subject_id              query      string  true  "subject"
+// @Param        object                  query      string  true  "resource"
+// @Param        relation                query      string  true  "access-type"
+// @Param        subject_set.namespace   query      string  true  "subject_set namespace"
+// @Param        subject_set.object      query      string  true  "subject_set object"
+// @Param        subject_set.relation    query      string  true  "subject_set relation"
+// @Param        Authorization           header     string  true  "Bearer <Bouncer_access_token>" 
 // @Success      200             {string}  model.KetoResponse
 // @Failure      400             {object}  model.KetoResponse
 // @Failure      401             {object}  model.KetoResponse
@@ -280,10 +187,11 @@ func (a AuthController) Query(c *gin.Context) {
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        namespace   path      string  true  "namespace"
-// @Param        subject_id  path      string  true  "subject"
-// @Param        object      path      string  true  "resource"
-// @Param        relation    path      string  true  "access-type"
+// @Param        namespace      query     string   true  "namespace"
+// @Param        max-depth      query     integer  true  "max-depth to expand tuple"
+// @Param        object         query     string   true  "resource"
+// @Param        relation       query     string   true  "access-type"
+// @Param        Authorization  header    string   true  "Bearer <Bouncer_access_token>" 
 // @Success      200             {string}  model.KetoResponse
 // @Failure      400             {object}  model.KetoResponse
 // @Failure      401             {object}  model.KetoResponse
