@@ -39,28 +39,28 @@
                         "type": "string",
                         "description": "namespace",
                         "name": "namespace",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "subject",
-                        "name": "subject_id",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "resource",
                         "name": "object",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "access-type",
                         "name": "relation",
-                        "in": "path",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bearer \u003cBouncer_access_token\u003e",
+                        "name": "Authorization",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -116,28 +116,35 @@
                         "type": "string",
                         "description": "namespace",
                         "name": "namespace",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "subject",
-                        "name": "subject_id",
-                        "in": "path",
+                        "type": "integer",
+                        "description": "max-depth to expand tuple",
+                        "name": "max-depth",
+                        "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "resource",
                         "name": "object",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "access-type",
                         "name": "relation",
-                        "in": "path",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bearer \u003cBouncer_access_token\u003e",
+                        "name": "Authorization",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -193,141 +200,57 @@
                         "type": "string",
                         "description": "namespace",
                         "name": "namespace",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "subject",
                         "name": "subject_id",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "resource",
                         "name": "object",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "access-type",
                         "name": "relation",
-                        "in": "path",
+                        "in": "query",
                         "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
                     },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/model.KetoResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/model.KetoResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/model.KetoResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.KetoResponse"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "create relation tuple",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "create relation tuple",
-                "parameters": [
                     {
-                        "description": "Relation Data",
-                        "name": "relation_tuple",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.RelationTuple"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "type": "string",
+                        "description": "subject_set namespace",
+                        "name": "subject_set.namespace",
+                        "in": "query",
+                        "required": true
                     },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/model.KetoResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/model.KetoResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/model.KetoResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.KetoResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "delete relation tuple",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "delete relation tuple",
-                "parameters": [
                     {
-                        "description": "Relation Data",
-                        "name": "relation_tuple",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.RelationTuple"
-                        }
+                        "type": "string",
+                        "description": "subject_set object",
+                        "name": "subject_set.object",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "subject_set relation",
+                        "name": "subject_set.relation",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bearer \u003cBouncer_access_token\u003e",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -377,6 +300,15 @@
                     "health"
                 ],
                 "summary": "health check",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer \u003cBouncer_access_token\u003e",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -417,27 +349,6 @@
                 "status": {
                     "type": "string",
                     "example": "403"
-                }
-            }
-        },
-        "model.RelationTuple": {
-            "type": "object",
-            "properties": {
-                "namespace": {
-                    "type": "string",
-                    "example": "canvas"
-                },
-                "object": {
-                    "type": "string",
-                    "example": "project-123"
-                },
-                "relation": {
-                    "type": "string",
-                    "example": "read"
-                },
-                "subject_id": {
-                    "type": "string",
-                    "example": "user-123"
                 }
             }
         }

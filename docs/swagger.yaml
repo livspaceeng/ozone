@@ -23,21 +23,6 @@ definitions:
         example: "403"
         type: string
     type: object
-  model.RelationTuple:
-    properties:
-      namespace:
-        example: canvas
-        type: string
-      object:
-        example: project-123
-        type: string
-      relation:
-        example: read
-        type: string
-      subject_id:
-        example: user-123
-        type: string
-    type: object
 host: localhost:8080
 info:
   contact:
@@ -59,23 +44,23 @@ paths:
       description: check token and policy
       parameters:
       - description: namespace
-        in: path
+        in: query
         name: namespace
         required: true
         type: string
-      - description: subject
-        in: path
-        name: subject_id
-        required: true
-        type: string
       - description: resource
-        in: path
+        in: query
         name: object
         required: true
         type: string
       - description: access-type
-        in: path
+        in: query
         name: relation
+        required: true
+        type: string
+      - description: Bearer <Bouncer_access_token>
+        in: header
+        name: Authorization
         required: true
         type: string
       produces:
@@ -111,23 +96,28 @@ paths:
       description: expand relation tuple
       parameters:
       - description: namespace
-        in: path
+        in: query
         name: namespace
         required: true
         type: string
-      - description: subject
-        in: path
-        name: subject_id
+      - description: max-depth to expand tuple
+        in: query
+        name: max-depth
         required: true
-        type: string
+        type: integer
       - description: resource
-        in: path
+        in: query
         name: object
         required: true
         type: string
       - description: access-type
-        in: path
+        in: query
         name: relation
+        required: true
+        type: string
+      - description: Bearer <Bouncer_access_token>
+        in: header
+        name: Authorization
         required: true
         type: string
       produces:
@@ -157,66 +147,49 @@ paths:
       tags:
       - auth
   /auth/relation_tuples:
-    delete:
-      consumes:
-      - application/json
-      description: delete relation tuple
-      parameters:
-      - description: Relation Data
-        in: body
-        name: relation_tuple
-        required: true
-        schema:
-          $ref: '#/definitions/model.RelationTuple'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/model.KetoResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/model.KetoResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/model.KetoResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/model.KetoResponse'
-      summary: delete relation tuple
-      tags:
-      - auth
     get:
       consumes:
       - application/json
       description: query relation tuple
       parameters:
       - description: namespace
-        in: path
+        in: query
         name: namespace
         required: true
         type: string
       - description: subject
-        in: path
+        in: query
         name: subject_id
         required: true
         type: string
       - description: resource
-        in: path
+        in: query
         name: object
         required: true
         type: string
       - description: access-type
-        in: path
+        in: query
         name: relation
+        required: true
+        type: string
+      - description: subject_set namespace
+        in: query
+        name: subject_set.namespace
+        required: true
+        type: string
+      - description: subject_set object
+        in: query
+        name: subject_set.object
+        required: true
+        type: string
+      - description: subject_set relation
+        in: query
+        name: subject_set.relation
+        required: true
+        type: string
+      - description: Bearer <Bouncer_access_token>
+        in: header
+        name: Authorization
         required: true
         type: string
       produces:
@@ -245,48 +218,17 @@ paths:
       summary: query relation tuple
       tags:
       - auth
-    put:
-      consumes:
-      - application/json
-      description: create relation tuple
-      parameters:
-      - description: Relation Data
-        in: body
-        name: relation_tuple
-        required: true
-        schema:
-          $ref: '#/definitions/model.RelationTuple'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/model.KetoResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/model.KetoResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/model.KetoResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/model.KetoResponse'
-      summary: create relation tuple
-      tags:
-      - auth
   /health:
     get:
       consumes:
       - application/json
       description: check health
+      parameters:
+      - description: Bearer <Bouncer_access_token>
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
