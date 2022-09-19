@@ -25,6 +25,7 @@ type AuthController struct{}
 // @Param        namespace      query      string  true  "namespace"
 // @Param        object         query      string  true  "resource"
 // @Param        relation       query      string  true  "access-type"
+// @Param        hydra          query      string  false "Default value is Bouncer. Use 'accounts' value for Accounts Hydra"
 // @Param        Authorization  header     string  true  "Bearer <Bouncer_access_token>" 
 // @Success      200         {string}  model.KetoResponse
 // @Failure      400         {object}  model.KetoResponse
@@ -37,11 +38,18 @@ func (a AuthController) Check(c *gin.Context) {
 	config := configs.GetConfig()
 
 	//Hydra
-	hydraUrl := config.GetString("hydra.url")
-	hydraPath := config.GetString("hydra.path.introspect")
+	headers := c.Request.Header
+	hydraClient := headers.Get("hydra")
+	var hydraUrl, hydraPath string
+	if hydraClient == "accounts" {
+		hydraUrl = config.GetString("accounts.hydra.url")
+		hydraPath = config.GetString("accounts.hydra.path.introspect")
+	} else {
+		hydraUrl = config.GetString("bouncer.hydra.url")
+		hydraPath = config.GetString("bouncer.hydra.path.introspect")
+	} 
 	u, _ := url.ParseRequestURI(hydraUrl)
 	u.Path = hydraPath
-	headers := c.Request.Header
 	bearer := headers.Get("Authorization")
 	if len(bearer) <= 0 {
 		log.Error("Bearer token absent!")
