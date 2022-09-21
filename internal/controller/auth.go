@@ -41,13 +41,18 @@ func (a AuthController) Check(c *gin.Context) {
 	headers := c.Request.Header
 	hydraClient := headers.Get("hydra")
 	var hydraUrl, hydraPath string
+	log.Info("1")
 	if hydraClient == "accounts" {
+		log.Info("2")
 		hydraUrl = config.GetString("accounts.hydra.url")
 		hydraPath = config.GetString("accounts.hydra.path.introspect")
 	} else {
+		log.Info("3")
 		hydraUrl = config.GetString("bouncer.hydra.url")
 		hydraPath = config.GetString("bouncer.hydra.path.introspect")
 	} 
+	log.Info("4 ", hydraUrl)
+	log.Info("5 ", hydraPath)
 	u, _ := url.ParseRequestURI(hydraUrl)
 	u.Path = hydraPath
 	bearer := headers.Get("Authorization")
