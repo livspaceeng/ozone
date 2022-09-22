@@ -41,18 +41,13 @@ func (a AuthController) Check(c *gin.Context) {
 	headers := c.Request.Header
 	hydraClient := c.Query("hydra")
 	var hydraUrl, hydraPath string
-	log.Info("1 ", hydraClient)
 	if hydraClient == "accounts" {
-		log.Info("2")
 		hydraUrl = config.GetString("accounts.hydra.url")
 		hydraPath = config.GetString("accounts.hydra.path.introspect")
 	} else {
-		log.Info("3")
 		hydraUrl = config.GetString("bouncer.hydra.url")
 		hydraPath = config.GetString("bouncer.hydra.path.introspect")
 	} 
-	log.Info("4 ", hydraUrl)
-	log.Info("5 ", hydraPath)
 	u, _ := url.ParseRequestURI(hydraUrl)
 	u.Path = hydraPath
 	bearer := headers.Get("Authorization")
@@ -116,9 +111,9 @@ func (a AuthController) Check(c *gin.Context) {
 		log.Info("Namespace:", c.Query("namespace"))
 		log.Info("Relation:", c.Query("relation"))
 		log.Info("Object:", c.Query("object"))
-		c.AbortWithStatus(http.StatusForbidden)
+		c.JSON(http.StatusForbidden, hydraResponse.Subject)
 	}
-
+	c.JSON(http.StatusOK, hydraResponse.Subject)
 }
 
 // AuthController godoc
