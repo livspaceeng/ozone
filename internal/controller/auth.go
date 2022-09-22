@@ -39,7 +39,7 @@ func (a AuthController) Check(c *gin.Context) {
 
 	//Hydra
 	headers := c.Request.Header
-	hydraClient := headers.Get("hydra")
+	hydraClient := c.Query("hydra")
 	var hydraUrl, hydraPath string
 	log.Info("1 ", hydraClient)
 	if hydraClient == "accounts" {
