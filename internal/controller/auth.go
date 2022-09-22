@@ -41,7 +41,7 @@ func (a AuthController) Check(c *gin.Context) {
 	headers := c.Request.Header
 	hydraClient := headers.Get("hydra")
 	var hydraUrl, hydraPath string
-	log.Info("1")
+	log.Info("1 ", hydraClient)
 	if hydraClient == "accounts" {
 		log.Info("2")
 		hydraUrl = config.GetString("accounts.hydra.url")
