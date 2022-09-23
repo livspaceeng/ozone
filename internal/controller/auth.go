@@ -53,16 +53,15 @@ func (a AuthController) Check(c *gin.Context) {
 	bearer := headers.Get("Authorization")
 	if len(bearer) <= 0 {
 		log.Error("Bearer token absent!")
-		c.AbortWithError(http.StatusUnauthorized, nil)
+		c.JSON(http.StatusUnauthorized, nil)
 	}
-	log.Info(bearer)
+	log.Info("Token: ", bearer)
 	validBearer := strings.Contains(bearer, "Bearer")
 	if !validBearer {
 		log.Error("Authorization header format is not valid!")
-		c.AbortWithError(http.StatusUnauthorized, nil)
+		c.JSON(http.StatusUnauthorized, nil)
 	}
 	token := strings.Split(bearer, " ")[1]
-	log.Info("Token: ", token)
 	data := url.Values{}
 	data.Set("token", token)
 	hydraRequest, _ := http.NewRequest(http.MethodPost, u.String(), strings.NewReader(data.Encode()))
