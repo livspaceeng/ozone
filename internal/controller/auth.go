@@ -54,14 +54,14 @@ func (a AuthController) Check(c *gin.Context) {
 	if len(bearer) <= 0 {
 		log.Error("Bearer token absent!")
 		c.AbortWithStatus(http.StatusUnauthorized)
-		c.Abort()
+		return
 	}
 	log.Info("Token: ", bearer)
 	validBearer := strings.Contains(bearer, "Bearer")
 	if !validBearer {
 		log.Error("Authorization header format is not valid!")
 		c.AbortWithStatus(http.StatusUnauthorized)
-		c.Abort()
+		return
 	}
 	token := strings.Split(bearer, " ")[1]
 	data := url.Values{}
@@ -118,7 +118,8 @@ func (a AuthController) Check(c *gin.Context) {
 		log.Info("Namespace:", c.Query("namespace"))
 		log.Info("Relation:", c.Query("relation"))
 		log.Info("Object:", c.Query("object"))
-		c.AbortWithStatusJSON(http.StatusForbidden, hydraResponse.Subject)
+		c.JSON(http.StatusForbidden, hydraResponse.Subject)
+		return
 	}
 	c.JSON(http.StatusOK, hydraResponse.Subject)
 }
