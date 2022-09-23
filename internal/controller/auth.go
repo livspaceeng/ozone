@@ -51,13 +51,11 @@ func (a AuthController) Check(c *gin.Context) {
 	u, _ := url.ParseRequestURI(hydraUrl)
 	u.Path = hydraPath
 	bearer := headers.Get("Authorization")
-	if len(bearer) <= 0 {
+	if len(bearer) <= 0 || bearer == "None" {
 		log.Error("Bearer token absent!")
 		c.AbortWithError(http.StatusUnauthorized, nil)
 	}
-	log.Info(bearer)
-	log.Info(len(bearer))
-	if !strings.Contains(bearer, "bearer") {
+	if !strings.Contains(bearer, "Bearer") {
 		log.Error("Authorization header format is not valid!")
 		c.AbortWithError(http.StatusUnauthorized, nil)
 	}
