@@ -51,7 +51,7 @@ func (a AuthController) Check(c *gin.Context) {
 	u, _ := url.ParseRequestURI(hydraUrl)
 	u.Path = hydraPath
 	bearer := headers.Get("Authorization")
-	if len(bearer) <= 0 || bearer == "None" {
+	if len(bearer) <= 0 {
 		log.Error("Bearer token absent!")
 		c.AbortWithError(http.StatusUnauthorized, nil)
 	}
