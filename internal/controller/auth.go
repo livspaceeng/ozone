@@ -57,7 +57,7 @@ func (a AuthController) Check(c *gin.Context) {
 		return
 	}
 	log.Info("Token: ", bearer)
-	validBearer := strings.Contains(bearer, "Bearer")
+	validBearer := strings.Contains(bearer, "Bearer") || strings.Contains(bearer, "bearer")
 	if !validBearer {
 		log.Error("Authorization header format is not valid!")
 		c.AbortWithStatus(http.StatusUnauthorized)
