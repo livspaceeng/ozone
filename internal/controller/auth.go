@@ -53,13 +53,13 @@ func (a AuthController) Check(c *gin.Context) {
 	bearer := headers.Get("Authorization")
 	if len(bearer) <= 0 {
 		log.Error("Bearer token absent!")
-		c.AbortWithStatusJSON(http.StatusUnauthorized, nil)
+		c.AbortWithStatus(http.StatusUnauthorized)
 	}
 	log.Info("Token: ", bearer)
 	validBearer := strings.Contains(bearer, "Bearer")
 	if !validBearer {
 		log.Error("Authorization header format is not valid!")
-		c.AbortWithStatusJSON(http.StatusUnauthorized, nil)
+		c.AbortWithStatus(http.StatusUnauthorized)
 	}
 	token := strings.Split(bearer, " ")[1]
 	data := url.Values{}
