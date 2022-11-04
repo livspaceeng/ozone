@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/livspaceeng/ozone/configs"
 	"github.com/livspaceeng/ozone/internal/model"
+	client "github.com/ory/keto-client-go"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -146,54 +148,87 @@ func (a AuthController) Check(c *gin.Context) {
 // @Failure      500             {object}  model.KetoResponse
 // @Router       /auth/relation_tuples [get]
 func (a AuthController) Query(c *gin.Context) {
-	httpClient := &http.Client{}
+	// httpClient := &http.Client{}
 	config := configs.GetConfig()
-
 	ketoUrl := config.GetString("keto.read.url")
-	ketoPath := config.GetString("keto.read.path.check")
-	ketoRequest, _ := http.NewRequest(http.MethodGet, ketoUrl+ketoPath, nil)
-	ketoRequest.Header.Add("Accept", "application/json")
 
-	q := ketoRequest.URL.Query()
-	q.Add("namespace", c.Query("namespace"))
-	q.Add("object", c.Query("object"))
-	q.Add("relation", c.Query("relation"))
+	configuration := client.NewConfiguration()
+    configuration.Servers = []client.ServerConfiguration{
+        {
+            URL: ketoUrl, 
+        },
+    }
+    apiClient := client.NewAPIClient(configuration)
 
+	namespace := c.Query("namespace")
+    object := c.Query("object")
+    relation := c.Query("relation")
 	if len(c.Query("subject_id")) > 0 {
-		q.Add("subject_id", c.Query("subject_id"))
+		subjectId := c.Query("subject_id")
+		resp, r, err := apiClient.ReadApi.GetCheck(context.Background()).Namespace(namespace).Object(object).Relation(relation).SubjectId(subjectId).Execute()
+		if err != nil {
+			log.Error("Error when calling `ReadApi.GetCheck``: %v\n", err)
+			log.Error("Full HTTP response: %v\n", r)
+		}
+		log.Info("Response from `ReadApi.GetCheck`: %v\n", resp)
+		c.JSON(http.StatusOK, resp)
 	} else {
-		q.Add("subject_set.namespace", c.Query("subject_set.namespace"))
-		q.Add("subject_set.object", c.Query("subject_set.object"))
-		q.Add("subject_set.relation", c.Query("subject_set.relation"))
+		subjectSetNamespace := c.Query("subject_set.namespace")
+		subjectSetObject := c.Query("subject_set.object")
+		subjectSetRelation := c.Query("subject_set.relation")
+		resp, r, err := apiClient.ReadApi.GetCheck(context.Background()).Namespace(namespace).Object(object).Relation(relation).SubjectSetNamespace(subjectSetNamespace).SubjectSetObject(subjectSetObject).SubjectSetRelation(subjectSetRelation).Execute()
+		if err != nil {
+			log.Error("Error when calling `ReadApi.GetCheck``: %v\n", err)
+			log.Error("Full HTTP response: %v\n", r)
+		}
+		log.Info("Response from `ReadApi.GetCheck`: %v\n", resp)
+		c.JSON(http.StatusOK, resp)
 	}
 
-	ketoRequest.URL.RawQuery = q.Encode()
-	log.Info(ketoRequest)
-	resp, err := httpClient.Do(ketoRequest)
+	// ketoPath := config.GetString("keto.read.path.check")
+	// ketoRequest, _ := http.NewRequest(http.MethodGet, ketoUrl+ketoPath, nil)
+	// ketoRequest.Header.Add("Accept", "application/json")
 
-	if err != nil {
-		log.Error("Errored when sending request to the server", err.Error())
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-	defer resp.Body.Close()
-	encodedBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Error("Decoding error: ", err.Error())
-	  	c.AbortWithError(http.StatusInternalServerError, err)
-		  return
-	}
-	var body map[string]interface{}
-	json.Unmarshal([]byte(string(encodedBody)), &body)
+	// q := ketoRequest.URL.Query()
+	// q.Add("namespace", c.Query("namespace"))
+	// q.Add("object", c.Query("object"))
+	// q.Add("relation", c.Query("relation"))
 
-	_, errBody := body["error"]
-	if errBody {
-		log.Error("Encountered error: ", body["error"])
-		c.JSON(http.StatusBadRequest, body["error"])
-		return
-	}
-	log.Info("Response body : ", body)
-	c.JSON(http.StatusOK, body)
+	// if len(c.Query("subject_id")) > 0 {
+	// 	q.Add("subject_id", c.Query("subject_id"))
+	// } else {
+	// 	q.Add("subject_set.namespace", c.Query("subject_set.namespace"))
+	// 	q.Add("subject_set.object", c.Query("subject_set.object"))
+	// 	q.Add("subject_set.relation", c.Query("subject_set.relation"))
+	// }
+
+	// ketoRequest.URL.RawQuery = q.Encode()
+	// log.Info(ketoRequest)
+	// resp, err := httpClient.Do(ketoRequest)
+
+	// if err != nil {
+	// 	log.Error("Errored when sending request to the server", err.Error())
+	// 	c.AbortWithError(http.StatusInternalServerError, err)
+	// 	return
+	// }
+	// defer resp.Body.Close()
+	// encodedBody, err := io.ReadAll(resp.Body)
+	// if err != nil {
+	// 	log.Error("Decoding error: ", err.Error())
+	//   	c.AbortWithError(http.StatusInternalServerError, err)
+	// 	  return
+	// }
+	// var body map[string]interface{}
+	// json.Unmarshal([]byte(string(encodedBody)), &body)
+
+	// _, errBody := body["error"]
+	// if errBody {
+	// 	log.Error("Encountered error: ", body["error"])
+	// 	c.JSON(http.StatusBadRequest, body["error"])
+	// 	return
+	// }
+	// log.Info("Response body : ", body)
+	// c.JSON(http.StatusOK, body)
 }
 
 // AuthController godoc
