@@ -161,9 +161,13 @@ func (a AuthController) Query(c *gin.Context) {
     apiClient := client.NewAPIClient(configuration)
 
 	namespace := c.Query("namespace")
+	log.Info("namespace:", namespace)
     object := c.Query("object")
+	log.Info("Object:", object)
     relation := c.Query("relation")
+	log.Info("relation:", relation)
 	if len(c.Query("subject_id")) > 0 {
+		log.Info("12")
 		subjectId := c.Query("subject_id")
 		resp, r, err := apiClient.ReadApi.GetCheck(context.Background()).Namespace(namespace).Object(object).Relation(relation).SubjectId(subjectId).Execute()
 		if err != nil {
@@ -173,6 +177,7 @@ func (a AuthController) Query(c *gin.Context) {
 		log.Info("Response from `ReadApi.GetCheck`: %v\n", resp)
 		c.JSON(http.StatusOK, resp)
 	} else {
+		log.Info("34")
 		subjectSetNamespace := c.Query("subject_set.namespace")
 		subjectSetObject := c.Query("subject_set.object")
 		subjectSetRelation := c.Query("subject_set.relation")
