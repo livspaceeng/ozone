@@ -58,6 +58,10 @@ paths:
         name: relation
         required: true
         type: string
+      - description: Default value is Bouncer. Use 'accounts' value for Accounts Hydra
+        in: query
+        name: hydra
+        type: string
       - description: Bearer <Bouncer_access_token>
         in: header
         name: Authorization

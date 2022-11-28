@@ -1,6 +1,7 @@
 package controller
 
 import (
+	// "context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/livspaceeng/ozone/configs"
 	"github.com/livspaceeng/ozone/internal/model"
+	// client "github.com/ory/keto-client-go"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -25,6 +27,7 @@ type AuthController struct{}
 // @Param        namespace      query      string  true  "namespace"
 // @Param        object         query      string  true  "resource"
 // @Param        relation       query      string  true  "access-type"
+// @Param        hydra          query      string  false "Default value is Bouncer. Use 'accounts' value for Accounts Hydra"
 // @Param        Authorization  header     string  true  "Bearer <Bouncer_access_token>" 
 // @Success      200         {string}  model.KetoResponse
 // @Failure      400         {object}  model.KetoResponse
@@ -37,18 +40,32 @@ func (a AuthController) Check(c *gin.Context) {
 	config := configs.GetConfig()
 
 	//Hydra
-	hydraUrl := config.GetString("hydra.url")
-	hydraPath := config.GetString("hydra.path.introspect")
+	headers := c.Request.Header
+	hydraClient := c.Query("hydra")
+	var hydraUrl, hydraPath string
+	if hydraClient == "accounts" {
+		hydraUrl = config.GetString("accounts.hydra.url")
+		hydraPath = config.GetString("accounts.hydra.path.introspect")
+	} else {
+		hydraUrl = config.GetString("bouncer.hydra.url")
+		hydraPath = config.GetString("bouncer.hydra.path.introspect")
+	} 
 	u, _ := url.ParseRequestURI(hydraUrl)
 	u.Path = hydraPath
-	headers := c.Request.Header
 	bearer := headers.Get("Authorization")
 	if len(bearer) <= 0 {
 		log.Error("Bearer token absent!")
-		c.AbortWithError(http.StatusUnauthorized, nil)
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	// log.Info("Token: ", bearer)
+	validBearer := strings.Contains(bearer, "Bearer") || strings.Contains(bearer, "bearer")
+	if !validBearer {
+		log.Error("Authorization header format is not valid!")
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 	token := strings.Split(bearer, " ")[1]
-	log.Info("Token: ", token)
 	data := url.Values{}
 	data.Set("token", token)
 	hydraRequest, _ := http.NewRequest(http.MethodPost, u.String(), strings.NewReader(data.Encode()))
@@ -103,9 +120,10 @@ func (a AuthController) Check(c *gin.Context) {
 		log.Info("Namespace:", c.Query("namespace"))
 		log.Info("Relation:", c.Query("relation"))
 		log.Info("Object:", c.Query("object"))
-		c.AbortWithStatus(http.StatusForbidden)
+		c.JSON(http.StatusForbidden, hydraResponse.Subject)
+		return
 	}
-
+	c.JSON(http.StatusOK, hydraResponse.Subject)
 }
 
 // AuthController godoc
@@ -132,8 +150,41 @@ func (a AuthController) Check(c *gin.Context) {
 func (a AuthController) Query(c *gin.Context) {
 	httpClient := &http.Client{}
 	config := configs.GetConfig()
-
 	ketoUrl := config.GetString("keto.read.url")
+
+	// configuration := client.NewConfiguration()
+    // configuration.Servers = []client.ServerConfiguration{
+    //     {
+    //         URL: ketoUrl, 
+    //     },
+    // }
+    // apiClient := client.NewAPIClient(configuration)
+
+	// namespace := c.Query("namespace")
+    // object := c.Query("object")
+    // relation := c.Query("relation")
+	// if len(c.Query("subject_id")) > 0 {
+	// 	subjectId := c.Query("subject_id")
+	// 	resp, r, err := apiClient.ReadApi.GetCheck(context.Background()).Namespace(namespace).Object(object).Relation(relation).SubjectId(subjectId).Execute()
+	// 	if err != nil {
+	// 		log.Error("Error when calling `ReadApi.GetCheck``: %v\n", err)
+	// 		log.Error("Full HTTP response: %v\n", r)
+	// 	}
+	// 	log.Info("Response from `ReadApi.GetCheck`: %v\n", resp)
+	// 	c.JSON(http.StatusOK, resp)
+	// } else {
+	// 	subjectSetNamespace := c.Query("subject_set.namespace")
+	// 	subjectSetObject := c.Query("subject_set.object")
+	// 	subjectSetRelation := c.Query("subject_set.relation")
+	// 	resp, r, err := apiClient.ReadApi.GetCheck(context.Background()).Namespace(namespace).Object(object).Relation(relation).SubjectSetNamespace(subjectSetNamespace).SubjectSetObject(subjectSetObject).SubjectSetRelation(subjectSetRelation).Execute()
+	// 	if err != nil {
+	// 		log.Error("Error when calling `ReadApi.GetCheck``: %v\n", err)
+	// 		log.Error("Full HTTP response: %v\n", r)
+	// 	}
+	// 	log.Info("Response from `ReadApi.GetCheck`: %v\n", resp)
+	// 	c.JSON(http.StatusOK, resp)
+	// }
+
 	ketoPath := config.GetString("keto.read.path.check")
 	ketoRequest, _ := http.NewRequest(http.MethodGet, ketoUrl+ketoPath, nil)
 	ketoRequest.Header.Add("Accept", "application/json")

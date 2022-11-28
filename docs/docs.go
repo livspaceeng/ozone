@@ -62,6 +62,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "Default value is Bouncer. Use 'accounts' value for Accounts Hydra",
+                        "name": "hydra",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Bearer \u003cBouncer_access_token\u003e",
                         "name": "Authorization",
                         "in": "header",
