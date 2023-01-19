@@ -1,21 +1,16 @@
 package services
 
 import (
-	// "bytes"
-	// "context"
 	"encoding/json"
-	// "io"
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
-	// "time"
 
-	// "github.com/gin-gonic/gin"
 	"github.com/livspaceeng/ozone/configs"
 	"github.com/livspaceeng/ozone/internal/model"
 	"github.com/livspaceeng/ozone/internal/utils"
 	// "github.com/patrickmn/go-cache"
-	// client "github.com/ory/keto-client-go"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -52,24 +47,18 @@ func (hydraSvc hydraService) GetSubjectByToken(hydraClient string, bearer string
 	u.Path = hydraPath
 
 	if len(bearer) <= 0 {
-		log.Error("Bearer token absent!")
-		return http.StatusUnauthorized, "", nil
+		log.Error("Bearer token absent")
+		return http.StatusUnauthorized, "", errors.New("Bearer token absent")
 	}
 
 	validBearer := strings.Contains(bearer, "Bearer ") || strings.Contains(bearer, "bearer ")
 	if !validBearer {
-		log.Error("Authorization header format is not valid!")
-		return http.StatusUnauthorized, "", nil
+		log.Error("Authorization header format is not valid")
+		return http.StatusUnauthorized, "", errors.New("Authorization header format is not valid")
 	}
 	token := strings.Split(bearer, " ")[1]
 	data := url.Values{}
 	data.Set("token", token)
-	log.Info("4")
-	// hydraRequest, _ := http.NewRequest(http.MethodPost, u.String(), strings.NewReader(data.Encode()))
-	// hydraRequest.Header.Add("Authorization", bearer)
-	// hydraRequest.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	// resp, err := httpClient.Do(hydraRequest)
-
 	
 	headers["Authorization"] = bearer
 	headers["Content-Type"] = "application/x-www-form-urlencoded"

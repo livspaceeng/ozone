@@ -2,21 +2,14 @@ package services
 
 import (
 	"bytes"
-	// "context"
 	"encoding/json"
 	"errors"
-	// "io"
 	"net/http"
 	"net/url"
-	// "strings"
-	// "time"
 
-	// "github.com/gin-gonic/gin"
 	"github.com/livspaceeng/ozone/configs"
 	"github.com/livspaceeng/ozone/internal/model"
 	"github.com/livspaceeng/ozone/internal/utils"
-	// "github.com/patrickmn/go-cache"
-	// client "github.com/ory/keto-client-go"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -48,33 +41,23 @@ func (ketoSvc ketoService) ValidatePolicy (hydraResponse string, namespace strin
 
 	ketoUrl := config.GetString("keto.read.url")
 	ketoPath := config.GetString("keto.read.path.check")
-	// ketoRequest, _ := http.NewRequest(http.MethodGet, ketoUrl+ketoPath, nil)
-	// ketoRequest.Header.Add("Accept", "application/json")
 	headers["Accept"] = "application/json"
-	// q := ketoRequest.URL.Query()
+
 	u, _ := url.ParseRequestURI(ketoUrl)
 	u.Path = ketoPath
 	q := u.Query()
 	q.Add("namespace", namespace)
-	// q.Add("subject_id", hydraResponse.Subject)
 	q.Add("subject_id", hydraResponse)
 	q.Add("relation", relation)
 	q.Add("object", object)
-	// ketoRequest.URL.RawQuery = q.Encode()
 	u.RawQuery = q.Encode()
-	// log.Info(ketoRequest)
-	// resp, err := httpClient.Do(ketoRequest)
 	log.Info(u.String())
+
 	resp, err := httpClient.SendRequest(http.MethodGet, u.String(), bytes.NewBuffer(body), headers)
 	if err != nil {
 		log.Error("Errored when sending request to the server", err.Error())
 		return http.StatusFailedDependency, "", err
 	}
-
-	// if err != nil {
-	// 	log.Error("Errored when sending request to the server", err.Error())
-	// 	c.AbortWithError(http.StatusInternalServerError, err)
-	// }
 
 	defer resp.Body.Close()
 	var ketoResponse model.KetoResponse
