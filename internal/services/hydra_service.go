@@ -76,7 +76,7 @@ func (hydraSvc hydraService) GetSubjectByToken(hydraClient string, bearer string
 	resp, err := httpClient.SendRequest(http.MethodPost, u.String(), strings.NewReader(data.Encode()), headers)
 	if err != nil {
 		log.Error("Errored when sending request to the server", err.Error())
-		return http.StatusInternalServerError, "", err
+		return http.StatusFailedDependency, "", err
 	}
 	var hydraResponse model.HydraResponse
 	err = json.NewDecoder(resp.Body).Decode(&hydraResponse)

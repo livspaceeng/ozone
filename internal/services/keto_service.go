@@ -4,6 +4,7 @@ import (
 	"bytes"
 	// "context"
 	"encoding/json"
+	"errors"
 	// "io"
 	"net/http"
 	"net/url"
@@ -40,6 +41,11 @@ func (ketoSvc ketoService) ValidatePolicy (hydraResponse string, namespace strin
 	var headers = make(map[string]string)
 	var body []byte
 
+	if namespace=="" || relation=="" || object=="" {
+		log.Error("Invalid query params")
+		return http.StatusBadRequest, "", errors.New("Invalid query params")
+	}
+
 	ketoUrl := config.GetString("keto.read.url")
 	ketoPath := config.GetString("keto.read.path.check")
 	// ketoRequest, _ := http.NewRequest(http.MethodGet, ketoUrl+ketoPath, nil)
@@ -62,7 +68,7 @@ func (ketoSvc ketoService) ValidatePolicy (hydraResponse string, namespace strin
 	resp, err := httpClient.SendRequest(http.MethodGet, u.String(), bytes.NewBuffer(body), headers)
 	if err != nil {
 		log.Error("Errored when sending request to the server", err.Error())
-		return http.StatusInternalServerError, "", err
+		return http.StatusFailedDependency, "", err
 	}
 
 	// if err != nil {

@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 	// "net/url"
-	// "strings"
+	"strings"
 	// "time"
 
 	"github.com/gin-gonic/gin"
@@ -120,12 +120,19 @@ func (a authController) Check(c *gin.Context) {
 	// cacheManager.Set(token, hydraResponse.Subject, cache.DefaultExpiration)
 
 	//Keto
-	log.Info("6", c.Request.URL.Path)
-	log.Info("7", c.Request.Host)
-	log.Info("8", c.Request.URL.Query().Get("object"))
-	namespace := c.Query("namespace")
-	relation := c.Query("relation")
-	object := c.Query("object")
+	var namespace, relation, object string = "", "", ""
+	queries := strings.Split(c.Request.URL.RawQuery, "&")
+	for _, query := range queries {
+		query = strings.ToLower(query)
+		if strings.HasPrefix(query, "namespace") {
+			namespace = strings.Split(query, "=")[1]
+		} else if strings.HasPrefix(query, "relation") {
+			relation = strings.Split(query, "=")[1]
+		}  else if strings.HasPrefix(query, "object") {
+			object = strings.Split(query, "=")[1]
+		}
+	}
+
 	ketoStatus, ketoResponse, err := a.ketoService.ValidatePolicy(hydraResponse, namespace, relation, object)
 	// ketoUrl := config.GetString("keto.read.url")
 	// ketoPath := config.GetString("keto.read.path.check")
