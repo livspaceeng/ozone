@@ -112,7 +112,7 @@ func (a authController) Check(c *gin.Context) {
 	log.Info("2",bearer)
 	hydraStatus, hydraResponse, err := a.hydraService.GetSubjectByToken(hydraClient, bearer)
 	if hydraStatus != http.StatusOK {
-		c.AbortWithError(hydraStatus, err)
+		c.JSON(hydraStatus, err)
 		return
 	}
 
@@ -120,6 +120,9 @@ func (a authController) Check(c *gin.Context) {
 	// cacheManager.Set(token, hydraResponse.Subject, cache.DefaultExpiration)
 
 	//Keto
+	log.Info("6", c.Request.URL.Path)
+	log.Info("7", c.Request.Host)
+	log.Info("8", c.Request.URL.Query().Get("object"))
 	namespace := c.Query("namespace")
 	relation := c.Query("relation")
 	object := c.Query("object")
@@ -163,13 +166,13 @@ func (a authController) Check(c *gin.Context) {
 	// // c.JSON(http.StatusOK, hydraResponse.Subject)
 	// c.JSON(http.StatusOK, hydraResponse)
 	if ketoStatus == http.StatusOK {
-		c.JSON(http.StatusOK, ketoResponse)
+		c.JSON(ketoStatus, ketoResponse)
 		return
 	} else if ketoStatus == http.StatusForbidden {
-		c.JSON(http.StatusForbidden, ketoResponse)
+		c.JSON(ketoStatus, ketoResponse)
 		return
 	} else {
-		c.JSON(http.StatusInternalServerError, err)
+		c.JSON(ketoStatus, err)
 	}
 }
 
