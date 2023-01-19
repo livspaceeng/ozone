@@ -5,17 +5,36 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"net/url"
-	"strings"
+	// "net/url"
+	// "strings"
+	// "time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/livspaceeng/ozone/configs"
-	"github.com/livspaceeng/ozone/internal/model"
+	// "github.com/livspaceeng/ozone/internal/model"
+	service "github.com/livspaceeng/ozone/internal/services"
+	// "github.com/patrickmn/go-cache"
 	// client "github.com/ory/keto-client-go"
 	log "github.com/sirupsen/logrus"
 )
 
-type AuthController struct{}
+type AuthController interface {
+	Check(c *gin.Context)
+	Query(c *gin.Context)
+	Expand(c *gin.Context)
+}
+
+type authController struct{
+	hydraService service.HydraService
+	ketoService service.KetoService
+}
+
+func NewAuthController(hydraSvc service.HydraService, ketoSvc service.KetoService) AuthController {
+	return &authController{
+		hydraService: hydraSvc,
+		ketoService: ketoSvc,
+	}
+}
 
 // AuthController godoc
 // @Summary      auth check
@@ -35,95 +54,123 @@ type AuthController struct{}
 // @Failure      403         {object}  model.KetoResponse
 // @Failure      500         {object}  model.KetoResponse
 // @Router       /auth/check [get]
-func (a AuthController) Check(c *gin.Context) {
-	httpClient := &http.Client{}
-	config := configs.GetConfig()
+func (a authController) Check(c *gin.Context) {
+	// httpClient := &http.Client{}
+	// config := configs.GetConfig()
+	// cacheManager := cache.New(5*time.Minute, 10*time.Minute)
 
 	//Hydra
 	headers := c.Request.Header
 	hydraClient := c.Query("hydra")
-	var hydraUrl, hydraPath string
-	if hydraClient == "accounts" {
-		hydraUrl = config.GetString("accounts.hydra.url")
-		hydraPath = config.GetString("accounts.hydra.path.introspect")
-	} else {
-		hydraUrl = config.GetString("bouncer.hydra.url")
-		hydraPath = config.GetString("bouncer.hydra.path.introspect")
-	} 
-	u, _ := url.ParseRequestURI(hydraUrl)
-	u.Path = hydraPath
+	// var hydraUrl, hydraPath string
+	// if hydraClient == "accounts" {
+	// 	hydraUrl = config.GetString("accounts.hydra.url")
+	// 	hydraPath = config.GetString("accounts.hydra.path.introspect")
+	// } else {
+	// 	hydraUrl = config.GetString("bouncer.hydra.url")
+	// 	hydraPath = config.GetString("bouncer.hydra.path.introspect")
+	// } 
+	// u, _ := url.ParseRequestURI(hydraUrl)
+	// u.Path = hydraPath
 	bearer := headers.Get("Authorization")
-	if len(bearer) <= 0 {
-		log.Error("Bearer token absent!")
-		c.AbortWithStatus(http.StatusUnauthorized)
+	// if len(bearer) <= 0 {
+	// 	log.Error("Bearer token absent!")
+	// 	c.AbortWithStatus(http.StatusUnauthorized)
+	// 	return
+	// }
+	// // log.Info("Token: ", bearer)
+	// validBearer := strings.Contains(bearer, "Bearer") || strings.Contains(bearer, "bearer")
+	// if !validBearer {
+	// 	log.Error("Authorization header format is not valid!")
+	// 	c.AbortWithStatus(http.StatusUnauthorized)
+	// 	return
+	// }
+	// token := strings.Split(bearer, " ")[1]
+	// data := url.Values{}
+	// data.Set("token", token)
+	// hydraRequest, _ := http.NewRequest(http.MethodPost, u.String(), strings.NewReader(data.Encode()))
+	// hydraRequest.Header.Add("Authorization", bearer)
+	// hydraRequest.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	// resp, err := httpClient.Do(hydraRequest)
+	// if err != nil {
+	// 	log.Error("Errored when sending request to the server", err.Error())
+	// 	c.AbortWithError(http.StatusInternalServerError, err)
+	// }
+	// var hydraResponse model.HydraResponse
+	// err = json.NewDecoder(resp.Body).Decode(&hydraResponse)
+	// if err != nil {
+	// 	log.Error("Decoding error: ", err.Error())
+	// 	c.AbortWithError(http.StatusInternalServerError, err)
+	// }
+	// log.Info("Subject: ", hydraResponse.Subject)
+	// if hydraResponse.Subject == "" {
+	// 	log.Error("Subject is nil!")
+	// 	c.AbortWithStatus(http.StatusUnauthorized)
+	// 	return
+	// }
+	log.Info("1",hydraClient)
+	log.Info("2",bearer)
+	hydraStatus, hydraResponse, err := a.hydraService.GetSubjectByToken(hydraClient, bearer)
+	if hydraStatus != http.StatusOK {
+		c.AbortWithError(hydraStatus, err)
 		return
 	}
-	// log.Info("Token: ", bearer)
-	validBearer := strings.Contains(bearer, "Bearer") || strings.Contains(bearer, "bearer")
-	if !validBearer {
-		log.Error("Authorization header format is not valid!")
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-	token := strings.Split(bearer, " ")[1]
-	data := url.Values{}
-	data.Set("token", token)
-	hydraRequest, _ := http.NewRequest(http.MethodPost, u.String(), strings.NewReader(data.Encode()))
-	hydraRequest.Header.Add("Authorization", bearer)
-	hydraRequest.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	resp, err := httpClient.Do(hydraRequest)
-	if err != nil {
-		log.Error("Errored when sending request to the server", err.Error())
-		c.AbortWithError(http.StatusInternalServerError, err)
-	}
-	var hydraResponse model.HydraResponse
-	err = json.NewDecoder(resp.Body).Decode(&hydraResponse)
-	if err != nil {
-		log.Error("Decoding error: ", err.Error())
-		c.AbortWithError(http.StatusInternalServerError, err)
-	}
-	log.Info("Subject: ", hydraResponse.Subject)
-	if hydraResponse.Subject == "" {
-		log.Error("Subject is nil!")
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
+
+	// //Cache Store
+	// cacheManager.Set(token, hydraResponse.Subject, cache.DefaultExpiration)
 
 	//Keto
-	ketoUrl := config.GetString("keto.read.url")
-	ketoPath := config.GetString("keto.read.path.check")
-	ketoRequest, _ := http.NewRequest(http.MethodGet, ketoUrl+ketoPath, nil)
-	ketoRequest.Header.Add("Accept", "application/json")
-	q := ketoRequest.URL.Query()
-	q.Add("namespace", c.Query("namespace"))
-	q.Add("subject_id", hydraResponse.Subject)
-	q.Add("relation", c.Query("relation"))
-	q.Add("object", c.Query("object"))
-	ketoRequest.URL.RawQuery = q.Encode()
-	log.Info(ketoRequest)
-	resp, err = httpClient.Do(ketoRequest)
+	namespace := c.Query("namespace")
+	relation := c.Query("relation")
+	object := c.Query("object")
+	ketoStatus, ketoResponse, err := a.ketoService.ValidatePolicy(hydraResponse, namespace, relation, object)
+	// ketoUrl := config.GetString("keto.read.url")
+	// ketoPath := config.GetString("keto.read.path.check")
+	// ketoRequest, _ := http.NewRequest(http.MethodGet, ketoUrl+ketoPath, nil)
+	// ketoRequest.Header.Add("Accept", "application/json")
+	// q := ketoRequest.URL.Query()
+	// q.Add("namespace", c.Query("namespace"))
+	// // q.Add("subject_id", hydraResponse.Subject)
+	// q.Add("subject_id", hydraResponse)
+	// q.Add("relation", c.Query("relation"))
+	// q.Add("object", c.Query("object"))
+	// ketoRequest.URL.RawQuery = q.Encode()
+	// log.Info(ketoRequest)
+	// resp, err := httpClient.Do(ketoRequest)
 
-	if err != nil {
-		log.Error("Errored when sending request to the server", err.Error())
-		c.AbortWithError(http.StatusInternalServerError, err)
-	}
+	// if err != nil {
+	// 	log.Error("Errored when sending request to the server", err.Error())
+	// 	c.AbortWithError(http.StatusInternalServerError, err)
+	// }
 
-	defer resp.Body.Close()
-	var ketoResponse model.KetoResponse
-	err = json.NewDecoder(resp.Body).Decode(&ketoResponse)
-	if err != nil {
-		log.Error("Decoding error: ", err.Error())
-		c.AbortWithError(http.StatusInternalServerError, err)
-	}
-	if !ketoResponse.Allowed {
-		log.Info("Policy is not created for subject:", hydraResponse.Subject)
-		log.Info("Namespace:", c.Query("namespace"))
-		log.Info("Relation:", c.Query("relation"))
-		log.Info("Object:", c.Query("object"))
-		c.JSON(http.StatusForbidden, hydraResponse.Subject)
+	// defer resp.Body.Close()
+	// var ketoResponse model.KetoResponse
+	// err = json.NewDecoder(resp.Body).Decode(&ketoResponse)
+	// if err != nil {
+	// 	log.Error("Decoding error: ", err.Error())
+	// 	c.AbortWithError(http.StatusInternalServerError, err)
+	// }
+	// if !ketoResponse.Allowed {
+	// 	// log.Info("Policy is not created for subject:", hydraResponse.Subject)
+	// 	log.Info("Policy is not created for subject:", hydraResponse)
+	// 	log.Info("Namespace:", c.Query("namespace"))
+	// 	log.Info("Relation:", c.Query("relation"))
+	// 	log.Info("Object:", c.Query("object"))
+	// 	// c.JSON(http.StatusForbidden, hydraResponse.Subject)
+	// 	c.JSON(http.StatusForbidden, hydraResponse)
+	// 	return
+	// }
+	// // c.JSON(http.StatusOK, hydraResponse.Subject)
+	// c.JSON(http.StatusOK, hydraResponse)
+	if ketoStatus == http.StatusOK {
+		c.JSON(http.StatusOK, ketoResponse)
 		return
+	} else if ketoStatus == http.StatusForbidden {
+		c.JSON(http.StatusForbidden, ketoResponse)
+		return
+	} else {
+		c.JSON(http.StatusInternalServerError, err)
 	}
-	c.JSON(http.StatusOK, hydraResponse.Subject)
 }
 
 // AuthController godoc
@@ -147,7 +194,7 @@ func (a AuthController) Check(c *gin.Context) {
 // @Failure      403             {object}  model.KetoResponse
 // @Failure      500             {object}  model.KetoResponse
 // @Router       /auth/relation_tuples [get]
-func (a AuthController) Query(c *gin.Context) {
+func (a authController) Query(c *gin.Context) {
 	httpClient := &http.Client{}
 	config := configs.GetConfig()
 	ketoUrl := config.GetString("keto.read.url")
@@ -249,7 +296,7 @@ func (a AuthController) Query(c *gin.Context) {
 // @Failure      403             {object}  model.KetoResponse
 // @Failure      500             {object}  model.KetoResponse
 // @Router       /auth/expand [get]
-func (a AuthController) Expand(c *gin.Context) {
+func (a authController) Expand(c *gin.Context) {
 	httpClient := &http.Client{}
 	config := configs.GetConfig()
 
