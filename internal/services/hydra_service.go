@@ -53,7 +53,7 @@ func (hydraSvc hydraService) GetSubjectByToken(hydraClient string, bearer string
 
 	validBearer := strings.Contains(bearer, "Bearer ") || strings.Contains(bearer, "bearer ")
 	if !validBearer {
-		log.Error("Authorization header format is not valid")
+		log.Error("Authorization header format is not valid", bearer)
 		return http.StatusUnauthorized, "", errors.New("Authorization header format is not valid")
 	}
 	token := strings.Split(bearer, " ")[1]
@@ -85,7 +85,7 @@ func (hydraSvc hydraService) GetSubjectByToken(hydraClient string, bearer string
 	}
 
 	//Cache Store
-	tokenValidity := hydraResponse.Expiry-hydraResponse.IssuedAt-1
+	tokenValidity := hydraResponse.Expiry-int(time.Now().Unix())-1
 	log.Info("token validity", tokenValidity)
 	cacheManager.Set(token, hydraResponse.Subject, time.Duration(tokenValidity)*time.Second)
 	cacheManager.Add(token, hydraResponse.Subject, time.Duration(tokenValidity)*time.Second)
