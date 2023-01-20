@@ -75,8 +75,8 @@ func (a authController) Check(c *gin.Context) {
 		}
 	}
 
-	ketoStatus, ketoResponse, err := a.ketoService.ValidatePolicy(hydraResponse, namespace, relation, object)
-	
+	ketoStatus, ketoResponse, err := a.ketoService.ValidatePolicy(namespace, relation, object, hydraResponse)
+
 	if ketoStatus == http.StatusOK {
 		c.JSON(ketoStatus, ketoResponse)
 		return
@@ -110,9 +110,9 @@ func (a authController) Check(c *gin.Context) {
 // @Failure      500             {object}  model.KetoResponse
 // @Router       /auth/relation_tuples [get]
 func (a authController) Query(c *gin.Context) {
-	httpClient := &http.Client{}
-	config := configs.GetConfig()
-	ketoUrl := config.GetString("keto.read.url")
+	// httpClient := &http.Client{}
+	// config := configs.GetConfig()
+	// ketoUrl := config.GetString("keto.read.url")
 
 	// configuration := client.NewConfiguration()
     // configuration.Servers = []client.ServerConfiguration{
@@ -147,50 +147,92 @@ func (a authController) Query(c *gin.Context) {
 	// 	c.JSON(http.StatusOK, resp)
 	// }
 
-	ketoPath := config.GetString("keto.read.path.check")
-	ketoRequest, _ := http.NewRequest(http.MethodGet, ketoUrl+ketoPath, nil)
-	ketoRequest.Header.Add("Accept", "application/json")
+	// ketoPath := config.GetString("keto.read.path.check")
+	// ketoRequest, _ := http.NewRequest(http.MethodGet, ketoUrl+ketoPath, nil)
+	// ketoRequest.Header.Add("Accept", "application/json")
 
-	q := ketoRequest.URL.Query()
-	q.Add("namespace", c.Query("namespace"))
-	q.Add("object", c.Query("object"))
-	q.Add("relation", c.Query("relation"))
+	// q := ketoRequest.URL.Query()
+	// q.Add("namespace", c.Query("namespace"))
+	// q.Add("object", c.Query("object"))
+	// q.Add("relation", c.Query("relation"))
 
-	if len(c.Query("subject_id")) > 0 {
-		q.Add("subject_id", c.Query("subject_id"))
+	var namespace, relation, object, subjectId, subjectSetNamespace, subjectSetRelation, subjectSetObject string = "", "", "", "", "", "", ""
+	queries := strings.Split(c.Request.URL.RawQuery, "&")
+	for _, query := range queries {
+		query = strings.ToLower(query)
+		if strings.HasPrefix(query, "namespace") {
+			namespace = strings.Split(query, "=")[1]
+		} else if strings.HasPrefix(query, "relation") {
+			relation = strings.Split(query, "=")[1]
+		}  else if strings.HasPrefix(query, "object") {
+			object = strings.Split(query, "=")[1]
+		} else if strings.HasPrefix(query, "subject_id") {
+			subjectId = strings.Split(query, "=")[1]
+		} else if strings.HasPrefix(query, "subject_set.namespace") {
+			subjectSetNamespace = strings.Split(query, "=")[1]
+		} else if strings.HasPrefix(query, "subject_set.relation") {
+			subjectSetRelation = strings.Split(query, "=")[1]
+		} else if strings.HasPrefix(query, "subject_set.object") {
+			subjectSetObject = strings.Split(query, "=")[1]
+		}
+	}
+
+	// if len(c.Query("subject_id")) > 0 {
+	// 	q.Add("subject_id", c.Query("subject_id"))
+	// } else {
+	// 	q.Add("subject_set.namespace", c.Query("subject_set.namespace"))
+	// 	q.Add("subject_set.object", c.Query("subject_set.object"))
+	// 	q.Add("subject_set.relation", c.Query("subject_set.relation"))
+	// }
+
+	var (
+		ketoStatus int
+		ketoResponse string
+		err error
+	)
+	if len(subjectId) > 0 {
+		ketoStatus, ketoResponse, err = a.ketoService.ValidatePolicy(namespace, relation, object, subjectId)
 	} else {
-		q.Add("subject_set.namespace", c.Query("subject_set.namespace"))
-		q.Add("subject_set.object", c.Query("subject_set.object"))
-		q.Add("subject_set.relation", c.Query("subject_set.relation"))
+		ketoStatus, ketoResponse, err = a.ketoService.ValidatePolicyWithSet(namespace, relation, object, subjectSetNamespace, subjectSetRelation, subjectSetObject)
 	}
 
-	ketoRequest.URL.RawQuery = q.Encode()
-	log.Info(ketoRequest)
-	resp, err := httpClient.Do(ketoRequest)
-
-	if err != nil {
-		log.Error("Errored when sending request to the server", err.Error())
-		c.AbortWithError(http.StatusInternalServerError, err)
+	if ketoStatus == http.StatusOK {
+		c.JSON(ketoStatus, ketoResponse)
 		return
-	}
-	defer resp.Body.Close()
-	encodedBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Error("Decoding error: ", err.Error())
-	  	c.AbortWithError(http.StatusInternalServerError, err)
-		  return
-	}
-	var body map[string]interface{}
-	json.Unmarshal([]byte(string(encodedBody)), &body)
-
-	_, errBody := body["error"]
-	if errBody {
-		log.Error("Encountered error: ", body["error"])
-		c.JSON(http.StatusBadRequest, body["error"])
+	} else if ketoStatus == http.StatusForbidden {
+		c.JSON(ketoStatus, ketoResponse)
 		return
+	} else {
+		c.JSON(ketoStatus, err)
 	}
-	log.Info("Response body : ", body)
-	c.JSON(http.StatusOK, body)
+
+	// ketoRequest.URL.RawQuery = q.Encode()
+	// log.Info(ketoRequest)
+	// resp, err := httpClient.Do(ketoRequest)
+
+	// if err != nil {
+	// 	log.Error("Errored when sending request to the server", err.Error())
+	// 	c.AbortWithError(http.StatusInternalServerError, err)
+	// 	return
+	// }
+	// defer resp.Body.Close()
+	// encodedBody, err := io.ReadAll(resp.Body)
+	// if err != nil {
+	// 	log.Error("Decoding error: ", err.Error())
+	//   	c.AbortWithError(http.StatusInternalServerError, err)
+	// 	  return
+	// }
+	// var body map[string]interface{}
+	// json.Unmarshal([]byte(string(encodedBody)), &body)
+
+	// _, errBody := body["error"]
+	// if errBody {
+	// 	log.Error("Encountered error: ", body["error"])
+	// 	c.JSON(http.StatusBadRequest, body["error"])
+	// 	return
+	// }
+	// log.Info("Response body : ", body)
+	// c.JSON(http.StatusOK, body)
 }
 
 // AuthController godoc

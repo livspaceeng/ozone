@@ -32,7 +32,6 @@ func NewHydraService(httpClient *http.Client, cacheClient *cache.Cache) HydraSer
 }
 
 func (hydraSvc hydraService) GetSubjectByToken(hydraClient string, bearer string) (int, string, error) {
-	// cacheManager := cache.New(5*time.Minute, 10*time.Minute)
 	config := configs.GetConfig()
 	httpClient := utils.NewHttpClient(hydraSvc.httpClient)
 	var headers = make(map[string]string)
@@ -59,11 +58,14 @@ func (hydraSvc hydraService) GetSubjectByToken(hydraClient string, bearer string
 		return http.StatusUnauthorized, "", errors.New("Authorization header format is not valid")
 	}
 	token := strings.Split(bearer, " ")[1]
+	
+	//Cache Read
 	subject, found := hydraSvc.cacheClient.Get(token)
 	if found || subject != nil{
 		log.Info("Subject found in cache")
 		return http.StatusOK, subject.(string), nil
 	}
+	
 	data := url.Values{}
 	data.Set("token", token)
 	
@@ -89,13 +91,6 @@ func (hydraSvc hydraService) GetSubjectByToken(hydraClient string, bearer string
 	//Cache Store
 	tokenValidity := hydraResponse.Expiry-int(time.Now().Unix())-1
 	hydraSvc.cacheClient.Set(token, hydraResponse.Subject, time.Duration(tokenValidity)*time.Second)
-	hydraSvc.cacheClient.Add(token, hydraResponse.Subject, time.Duration(tokenValidity)*time.Second)
-
-	subject, found = hydraSvc.cacheClient.Get(token)
-	if found {
-		log.Info("Subject found in cache 2")
-		return http.StatusOK, subject.(string), nil
-	}
 
 	return http.StatusOK, hydraResponse.Subject, err
 }

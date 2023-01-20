@@ -31,7 +31,6 @@ func NewRouter() *gin.Engine {
 	health := new(controller.HealthController)
 
 	router.GET("/health", health.Status)
-	//	router.Use(middlewares.AuthMiddleware())
 
 	authResolver := router.Group("/api/v1/auth")
 	{
