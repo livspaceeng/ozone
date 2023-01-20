@@ -85,12 +85,14 @@ func (hydraSvc hydraService) GetSubjectByToken(hydraClient string, bearer string
 	}
 
 	//Cache Store
-	validity := hydraResponse.Expiry-hydraResponse.IssuedAt-1
-	cacheManager.Set(token, hydraResponse.Subject, time.Duration(validity)*time.Second)
+	tokenValidity := hydraResponse.Expiry-hydraResponse.IssuedAt-1
+	log.Info("token validity", tokenValidity)
+	cacheManager.Set(token, hydraResponse.Subject, time.Duration(tokenValidity)*time.Second)
+	cacheManager.Add(token, hydraResponse.Subject, time.Duration(tokenValidity)*time.Second)
 
 	subject, found = cacheManager.Get(token)
 	if found {
-		log.Info("Subject found in cache")
+		log.Info("Subject found in cache 2")
 		return http.StatusOK, subject.(string), nil
 	}
 
