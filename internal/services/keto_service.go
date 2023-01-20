@@ -17,6 +17,7 @@ import (
 type KetoService interface {
 	ValidatePolicy(hydraResponse string, namespace string, relation string, object string) (int, string, error)
 	ValidatePolicyWithSet (namespace string, relation string, object string, subjectSetNamespace string, subjectSetRelation string, subjectSetObject string) (int, string, error)
+	ExpandPolicy (namespace string, relation string, object string) (int, map[string]interface{}, error)
 }
 
 type ketoService struct {
