@@ -65,7 +65,6 @@ func (a authController) Check(c *gin.Context) {
 	var namespace, relation, object string = "", "", ""
 	queries := strings.Split(c.Request.URL.RawQuery, "&")
 	for _, query := range queries {
-		query = strings.ToLower(query)
 		if strings.HasPrefix(query, "namespace") {
 			namespace = strings.Split(query, "=")[1]
 		} else if strings.HasPrefix(query, "relation") {
@@ -159,7 +158,6 @@ func (a authController) Query(c *gin.Context) {
 	var namespace, relation, object, subjectId, subjectSetNamespace, subjectSetRelation, subjectSetObject string = "", "", "", "", "", "", ""
 	queries := strings.Split(c.Request.URL.RawQuery, "&")
 	for _, query := range queries {
-		query = strings.ToLower(query)
 		if strings.HasPrefix(query, "namespace") {
 			namespace = strings.Split(query, "=")[1]
 		} else if strings.HasPrefix(query, "relation") {

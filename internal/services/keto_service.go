@@ -114,7 +114,7 @@ func (ketoSvc ketoService) ValidatePolicyWithSet (namespace string, relation str
 		return http.StatusInternalServerError, "", err
 	}
 	if !ketoResponse.Allowed {
-		log.Info("Policy is not created for subjectSet Namespace: ", subjectSetNamespace, " subjectSet Relation: ", subjectSetRelation, " subjectSet Object: ", subjectSetObject, " Namespace: ", namespace, " Relation: ", relation, " Object: ", object)
+		log.Info("Policy is not created for subjectSetNamespace: ", subjectSetNamespace, " subjectSetRelation: ", subjectSetRelation, " subjectSetObject: ", subjectSetObject, " Namespace: ", namespace, " Relation: ", relation, " Object: ", object)
 		return http.StatusForbidden, "Policy does not exist", err
 	}
 	return http.StatusOK, "Policy exists", err
