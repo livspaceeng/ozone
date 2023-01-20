@@ -21,16 +21,18 @@ type HydraService interface {
 
 type hydraService struct {
 	httpClient *http.Client
+	cacheClient *cache.Cache
 }
 
 func NewHydraService(httpClient *http.Client) HydraService {
 	return &hydraService{
 		httpClient: httpClient,
+		cacheClient: cache.New(5*time.Minute, 10*time.Minute),
 	}
 }
 
 func (hydraSvc hydraService) GetSubjectByToken(hydraClient string, bearer string) (int, string, error) {
-	cacheManager := cache.New(5*time.Minute, 10*time.Minute)
+	// cacheManager := cache.New(5*time.Minute, 10*time.Minute)
 	config := configs.GetConfig()
 	httpClient := utils.NewHttpClient(hydraSvc.httpClient)
 	var headers = make(map[string]string)
@@ -53,11 +55,11 @@ func (hydraSvc hydraService) GetSubjectByToken(hydraClient string, bearer string
 
 	validBearer := strings.Contains(bearer, "Bearer ") || strings.Contains(bearer, "bearer ")
 	if !validBearer {
-		log.Error("Authorization header format is not valid", bearer)
+		log.Error("Authorization header format is not valid - ", bearer)
 		return http.StatusUnauthorized, "", errors.New("Authorization header format is not valid")
 	}
 	token := strings.Split(bearer, " ")[1]
-	subject, found := cacheManager.Get(token)
+	subject, found := hydraSvc.cacheClient.Get(token)
 	if found {
 		log.Info("Subject found in cache")
 		return http.StatusOK, subject.(string), nil
@@ -86,11 +88,10 @@ func (hydraSvc hydraService) GetSubjectByToken(hydraClient string, bearer string
 
 	//Cache Store
 	tokenValidity := hydraResponse.Expiry-int(time.Now().Unix())-1
-	log.Info("token validity", tokenValidity)
-	cacheManager.Set(token, hydraResponse.Subject, time.Duration(tokenValidity)*time.Second)
-	cacheManager.Add(token, hydraResponse.Subject, time.Duration(tokenValidity)*time.Second)
+	hydraSvc.cacheClient.Set(token, hydraResponse.Subject, time.Duration(tokenValidity)*time.Second)
+	hydraSvc.cacheClient.Add(token, hydraResponse.Subject, time.Duration(tokenValidity)*time.Second)
 
-	subject, found = cacheManager.Get(token)
+	subject, found = hydraSvc.cacheClient.Get(token)
 	if found {
 		log.Info("Subject found in cache 2")
 		return http.StatusOK, subject.(string), nil
