@@ -6,11 +6,12 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/livspaceeng/ozone/configs"
 	"github.com/livspaceeng/ozone/internal/model"
 	"github.com/livspaceeng/ozone/internal/utils"
-	// "github.com/patrickmn/go-cache"
+	"github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -29,8 +30,7 @@ func NewHydraService(httpClient *http.Client) HydraService {
 }
 
 func (hydraSvc hydraService) GetSubjectByToken(hydraClient string, bearer string) (int, string, error) {
-	// cacheManager := cache.New(5*time.Minute, 10*time.Minute)
-	log.Info("3")
+	cacheManager := cache.New(5*time.Minute, 10*time.Minute)
 	config := configs.GetConfig()
 	httpClient := utils.NewHttpClient(hydraSvc.httpClient)
 	var headers = make(map[string]string)
@@ -57,6 +57,11 @@ func (hydraSvc hydraService) GetSubjectByToken(hydraClient string, bearer string
 		return http.StatusUnauthorized, "", errors.New("Authorization header format is not valid")
 	}
 	token := strings.Split(bearer, " ")[1]
+	subject, found := cacheManager.Get(token)
+	if found {
+		log.Info("Subject found in cache")
+		return http.StatusOK, subject.(string), nil
+	}
 	data := url.Values{}
 	data.Set("token", token)
 	
@@ -80,7 +85,8 @@ func (hydraSvc hydraService) GetSubjectByToken(hydraClient string, bearer string
 	}
 
 	//Cache Store
-	// cacheManager.Set(token, hydraResponse.Subject, cache.DefaultExpiration)
+	validity := hydraResponse.Expiry-hydraResponse.IssuedAt-1
+	cacheManager.Set(token, hydraResponse.Subject, time.Duration(validity)*time.Second)
 
 	return http.StatusOK, hydraResponse.Subject, err
 }

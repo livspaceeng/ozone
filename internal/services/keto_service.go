@@ -28,7 +28,6 @@ func NewKetoService(httpClient *http.Client) KetoService {
 }
 
 func (ketoSvc ketoService) ValidatePolicy (hydraResponse string, namespace string, relation string, object string) (int, string, error) {
-	log.Info("5")
 	config := configs.GetConfig()
 	httpClient := utils.NewHttpClient(ketoSvc.httpClient)
 	var headers = make(map[string]string)
