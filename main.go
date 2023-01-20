@@ -4,7 +4,10 @@ import (
 	// "github.com/livspaceeng/ozone/configs"
 
 	"github.com/livspaceeng/ozone/internal/server"
+	"github.com/livspaceeng/ozone/middleware"
 	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 )
 
 // @title           Ozone API
@@ -32,5 +35,11 @@ func main() {
 		logLevel = log.InfoLevel
 	}
 	log.SetLevel(logLevel)
+	traceProvider, err := middleware.JaegerTraceProvider()
+	if err != nil {
+		log.Error(err)
+	}
+	otel.SetTracerProvider(traceProvider)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 	server.Init()
 }

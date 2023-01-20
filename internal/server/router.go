@@ -12,6 +12,7 @@ import (
 	"github.com/patrickmn/go-cache"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 var (
@@ -26,6 +27,7 @@ var (
 
 func NewRouter() *gin.Engine {
 	router := gin.Default()
+	router.Use(otelgin.Middleware("ozone"))
 	docs.SwaggerInfo.BasePath = "/api/v1"
 
 	health := new(controller.HealthController)

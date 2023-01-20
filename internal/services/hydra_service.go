@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -13,10 +14,11 @@ import (
 	"github.com/livspaceeng/ozone/internal/utils"
 	"github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
 )
 
 type HydraService interface {
-	GetSubjectByToken(hydraClient string, bearer string) (int, string, error)
+	GetSubjectByToken(ctx context.Context, hydraClient string, bearer string) (int, string, error)
 }
 
 type hydraService struct {
@@ -31,7 +33,11 @@ func NewHydraService(httpClient *http.Client, cacheClient *cache.Cache) HydraSer
 	}
 }
 
-func (hydraSvc hydraService) GetSubjectByToken(hydraClient string, bearer string) (int, string, error) {
+func (hydraSvc hydraService) GetSubjectByToken(ctx context.Context, hydraClient string, bearer string) (int, string, error) {
+	name := "CallHydraToFetchSubject"
+	childCtx, span := otel.Tracer(name).Start(ctx, "CallHydraToFetchSubject")
+	defer span.End()
+	
 	config := configs.GetConfig()
 	httpClient := utils.NewHttpClient(hydraSvc.httpClient)
 	var headers = make(map[string]string)
@@ -65,13 +71,13 @@ func (hydraSvc hydraService) GetSubjectByToken(hydraClient string, bearer string
 		log.Info("Subject found in cache")
 		return http.StatusOK, subject.(string), nil
 	}
-	
+
 	data := url.Values{}
 	data.Set("token", token)
 	
 	headers["Authorization"] = bearer
 	headers["Content-Type"] = "application/x-www-form-urlencoded"
-	resp, err := httpClient.SendRequest(http.MethodPost, u.String(), strings.NewReader(data.Encode()), headers)
+	resp, err := httpClient.SendRequest(childCtx, http.MethodPost, u.String(), strings.NewReader(data.Encode()), headers)
 	if err != nil {
 		log.Error("Errored when sending request to the server", err.Error())
 		return http.StatusFailedDependency, "", err

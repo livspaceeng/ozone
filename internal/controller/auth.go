@@ -1,15 +1,11 @@
 package controller
 
 import (
-	// "encoding/json"
-	// "io"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	// "github.com/livspaceeng/ozone/configs"
 	service "github.com/livspaceeng/ozone/internal/services"
-	// log "github.com/sirupsen/logrus"
 )
 
 type AuthController interface {
@@ -54,7 +50,7 @@ func (a authController) Check(c *gin.Context) {
 	hydraClient := c.Query("hydra")
 	bearer := headers.Get("Authorization")
 
-	hydraStatus, hydraResponse, err := a.hydraService.GetSubjectByToken(hydraClient, bearer)
+	hydraStatus, hydraResponse, err := a.hydraService.GetSubjectByToken(c.Request.Context(), hydraClient, bearer)
 	if hydraStatus != http.StatusOK {
 		c.JSON(hydraStatus, err)
 		return
@@ -73,7 +69,7 @@ func (a authController) Check(c *gin.Context) {
 		}
 	}
 
-	ketoStatus, ketoResponse, err := a.ketoService.ValidatePolicy(namespace, relation, object, hydraResponse)
+	ketoStatus, ketoResponse, err := a.ketoService.ValidatePolicy(c.Request.Context(), namespace, relation, object, hydraResponse)
 
 	if ketoStatus == http.StatusOK {
 		c.JSON(ketoStatus, ketoResponse)
@@ -134,9 +130,9 @@ func (a authController) Query(c *gin.Context) {
 		err error
 	)
 	if len(subjectId) > 0 {
-		ketoStatus, ketoResponse, err = a.ketoService.ValidatePolicy(namespace, relation, object, subjectId)
+		ketoStatus, ketoResponse, err = a.ketoService.ValidatePolicy(c.Request.Context(), namespace, relation, object, subjectId)
 	} else {
-		ketoStatus, ketoResponse, err = a.ketoService.ValidatePolicyWithSet(namespace, relation, object, subjectSetNamespace, subjectSetRelation, subjectSetObject)
+		ketoStatus, ketoResponse, err = a.ketoService.ValidatePolicyWithSet(c.Request.Context(), namespace, relation, object, subjectSetNamespace, subjectSetRelation, subjectSetObject)
 	}
 
 	if ketoStatus == http.StatusOK {
@@ -181,7 +177,7 @@ func (a authController) Expand(c *gin.Context) {
 		}
 	}
 
-	ketoStatus, ketoResponse, err := a.ketoService.ExpandPolicy(namespace, relation, object)
+	ketoStatus, ketoResponse, err := a.ketoService.ExpandPolicy(c.Request.Context(), namespace, relation, object)
 
 	if ketoStatus == http.StatusOK {
 		c.JSON(ketoStatus, ketoResponse)

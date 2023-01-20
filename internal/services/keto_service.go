@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -12,12 +13,13 @@ import (
 	"github.com/livspaceeng/ozone/internal/model"
 	"github.com/livspaceeng/ozone/internal/utils"
 	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
 )
 
 type KetoService interface {
-	ValidatePolicy(hydraResponse string, namespace string, relation string, object string) (int, string, error)
-	ValidatePolicyWithSet (namespace string, relation string, object string, subjectSetNamespace string, subjectSetRelation string, subjectSetObject string) (int, string, error)
-	ExpandPolicy (namespace string, relation string, object string) (int, map[string]interface{}, error)
+	ValidatePolicy(ctx context.Context, hydraResponse string, namespace string, relation string, object string) (int, string, error)
+	ValidatePolicyWithSet (ctx context.Context, namespace string, relation string, object string, subjectSetNamespace string, subjectSetRelation string, subjectSetObject string) (int, string, error)
+	ExpandPolicy (ctx context.Context, namespace string, relation string, object string) (int, map[string]interface{}, error)
 }
 
 type ketoService struct {
@@ -30,7 +32,11 @@ func NewKetoService(httpClient *http.Client) KetoService {
 	}
 }
 
-func (ketoSvc ketoService) ValidatePolicy (namespace string, relation string, object string, hydraResponse string) (int, string, error) {
+func (ketoSvc ketoService) ValidatePolicy (ctx context.Context, namespace string, relation string, object string, hydraResponse string) (int, string, error) {
+	name := "CallKetoToValidatePolicy"
+	childCtx, span := otel.Tracer(name).Start(ctx, "CallKetoToValidatePolicy")
+	defer span.End()
+
 	config := configs.GetConfig()
 	httpClient := utils.NewHttpClient(ketoSvc.httpClient)
 	var headers = make(map[string]string)
@@ -55,7 +61,7 @@ func (ketoSvc ketoService) ValidatePolicy (namespace string, relation string, ob
 	u.RawQuery = q.Encode()
 	log.Info(u.String())
 
-	resp, err := httpClient.SendRequest(http.MethodGet, u.String(), bytes.NewBuffer(body), headers)
+	resp, err := httpClient.SendRequest(childCtx, http.MethodGet, u.String(), bytes.NewBuffer(body), headers)
 	if err != nil {
 		log.Error("Errored when sending request to the server", err.Error())
 		return http.StatusFailedDependency, "", err
@@ -75,7 +81,11 @@ func (ketoSvc ketoService) ValidatePolicy (namespace string, relation string, ob
 	return http.StatusOK, hydraResponse, err
 }
 
-func (ketoSvc ketoService) ValidatePolicyWithSet (namespace string, relation string, object string, subjectSetNamespace string, subjectSetRelation string, subjectSetObject string) (int, string, error) {
+func (ketoSvc ketoService) ValidatePolicyWithSet (ctx context.Context, namespace string, relation string, object string, subjectSetNamespace string, subjectSetRelation string, subjectSetObject string) (int, string, error) {
+	name := "CallKetoToValidatePolicyWithSet"
+	childCtx, span := otel.Tracer(name).Start(ctx, "CallKetoToValidatePolicyWithSet")
+	defer span.End()
+
 	config := configs.GetConfig()
 	httpClient := utils.NewHttpClient(ketoSvc.httpClient)
 	var headers = make(map[string]string)
@@ -102,7 +112,7 @@ func (ketoSvc ketoService) ValidatePolicyWithSet (namespace string, relation str
 	u.RawQuery = q.Encode()
 	log.Info(u.String())
 
-	resp, err := httpClient.SendRequest(http.MethodGet, u.String(), bytes.NewBuffer(body), headers)
+	resp, err := httpClient.SendRequest(childCtx, http.MethodGet, u.String(), bytes.NewBuffer(body), headers)
 	if err != nil {
 		log.Error("Errored when sending request to the server", err.Error())
 		return http.StatusFailedDependency, "", err
@@ -122,7 +132,11 @@ func (ketoSvc ketoService) ValidatePolicyWithSet (namespace string, relation str
 	return http.StatusOK, "Policy exists", err
 }
 
-func (ketoSvc ketoService) ExpandPolicy (namespace string, relation string, object string) (int, map[string]interface{}, error) {
+func (ketoSvc ketoService) ExpandPolicy (ctx context.Context, namespace string, relation string, object string) (int, map[string]interface{}, error) {
+	name := "CallKetoToExpandPolicy"
+	childCtx, span := otel.Tracer(name).Start(ctx, "CallKetoToExpandPolicy")
+	defer span.End()
+
 	config := configs.GetConfig()
 	httpClient := utils.NewHttpClient(ketoSvc.httpClient)
 	var headers = make(map[string]string)
@@ -147,7 +161,7 @@ func (ketoSvc ketoService) ExpandPolicy (namespace string, relation string, obje
 	u.RawQuery = q.Encode()
 	log.Info(u.String())
 
-	resp, err := httpClient.SendRequest(http.MethodGet, u.String(), bytes.NewBuffer(body), headers)
+	resp, err := httpClient.SendRequest(childCtx, http.MethodGet, u.String(), bytes.NewBuffer(body), headers)
 	if err != nil {
 		log.Error("Errored when sending request to the server", err.Error())
 		return http.StatusFailedDependency, ketoResponse, err
