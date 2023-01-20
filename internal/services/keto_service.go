@@ -159,6 +159,8 @@ func (ketoSvc ketoService) ExpandPolicy (namespace string, relation string, obje
 	q.Add("namespace", namespace)
 	q.Add("relation", relation)
 	q.Add("object", object)
+	u.RawQuery = q.Encode()
+	log.Info(u.String())
 
 	resp, err := httpClient.SendRequest(http.MethodGet, u.String(), bytes.NewBuffer(body), headers)
 	if err != nil {
