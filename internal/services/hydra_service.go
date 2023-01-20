@@ -24,10 +24,10 @@ type hydraService struct {
 	cacheClient *cache.Cache
 }
 
-func NewHydraService(httpClient *http.Client) HydraService {
+func NewHydraService(httpClient *http.Client, cacheClient *cache.Cache) HydraService {
 	return &hydraService{
 		httpClient: httpClient,
-		cacheClient: cache.New(5*time.Minute, 10*time.Minute),
+		cacheClient: cacheClient,
 	}
 }
 
@@ -60,7 +60,7 @@ func (hydraSvc hydraService) GetSubjectByToken(hydraClient string, bearer string
 	}
 	token := strings.Split(bearer, " ")[1]
 	subject, found := hydraSvc.cacheClient.Get(token)
-	if found {
+	if found || subject != nil{
 		log.Info("Subject found in cache")
 		return http.StatusOK, subject.(string), nil
 	}
