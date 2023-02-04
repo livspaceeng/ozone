@@ -23,6 +23,7 @@ var (
 	ketoService			services.KetoService		= services.NewKetoService(httpClient)
 
 	authController		controller.AuthController 	= controller.NewAuthController(hydraService, ketoService)
+	healthController	controller.HealthController	= controller.NewHealthController()
 )
 
 func NewRouter() *gin.Engine {
@@ -30,9 +31,7 @@ func NewRouter() *gin.Engine {
 	router.Use(otelgin.Middleware("ozone"))
 	docs.SwaggerInfo.BasePath = "/api/v1"
 
-	health := new(controller.HealthController)
-
-	router.GET("/health", health.Status)
+	router.GET("/health", healthController.Status)
 
 	authResolver := router.Group("/api/v1/auth")
 	{

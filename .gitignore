@@ -17,3 +17,5 @@
 # Cmd files
 cmd/
 app
+
+*.scannerwork

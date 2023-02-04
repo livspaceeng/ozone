@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
@@ -25,6 +26,8 @@ func (httpClnt httpClient) SendRequest(ctx context.Context, method string, url s
 		httpRequest.Header.Add(k, v)
 	}
 	httpClient := http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+    defer cancel()
 	httpResponse, err := httpClient.Do(httpRequest.WithContext(ctx))
 
 	if httpResponse == nil {

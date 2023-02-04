@@ -2,14 +2,21 @@ log:
   level: info
 server:
   address: :32123
-hydra:
-  url: http://localhost:4445
-  path:
-    introspect: /oauth2/introspect
+bouncer:
+  hydra:
+    url: http://localhost:4445
+    path:
+      introspect: /hydra/oauth2/introspect
+accounts:
+  hydra:
+    url: http://localhost:4445
+    path:
+      introspect: /customer-oauth/oauth2/introspect
 keto:
   read:
     url: http://localhost:4466
     path:
       check: /check
+      expand: /expand
   write:
     url: localhost:4467

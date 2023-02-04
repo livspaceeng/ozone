@@ -74,9 +74,10 @@ func (hydraSvc hydraService) GetSubjectByToken(ctx context.Context, hydraClient 
 
 	data := url.Values{}
 	data.Set("token", token)
-	
 	headers["Authorization"] = bearer
 	headers["Content-Type"] = "application/x-www-form-urlencoded"
+	log.Info(u.String())
+
 	resp, err := httpClient.SendRequest(childCtx, http.MethodPost, u.String(), strings.NewReader(data.Encode()), headers)
 	if err != nil {
 		log.Error("Errored when sending request to the server", err.Error())
