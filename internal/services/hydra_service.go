@@ -96,7 +96,7 @@ func (hydraSvc hydraService) GetSubjectByToken(ctx context.Context, hydraClient 
 	}
 
 	//Cache Store
-	tokenValidity := hydraResponse.Expiry-int(time.Now().Unix())-1
+	tokenValidity := hydraResponse.Expiry-int(time.Now().Unix())-30
 	hydraSvc.cacheClient.Set(token, hydraResponse.Subject, time.Duration(tokenValidity)*time.Second)
 
 	return http.StatusOK, hydraResponse.Subject, err
