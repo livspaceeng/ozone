@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
@@ -25,6 +27,7 @@ func (httpClnt httpClient) SendRequest(ctx context.Context, method string, url s
 	for k, v := range headers {
 		httpRequest.Header.Add(k, v)
 	}
+	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(httpRequest.Header))
 	httpClient := http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
     defer cancel()

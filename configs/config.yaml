@@ -20,3 +20,4 @@ keto:
       expand: /expand
   write:
     url: localhost:4467
+failsafe_interval: 60
