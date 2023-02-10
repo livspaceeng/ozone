@@ -23,15 +23,16 @@ func NewHttpClient(cli *http.Client) HttpClient {
 }
 
 func (httpClnt httpClient) SendRequest(ctx context.Context, method string, url string, body io.Reader, headers map[string]string) (*http.Response, error) {
-	httpRequest, _ := http.NewRequest(method, url, body)
+	httpClient := http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
+	httpRequest, _ := http.NewRequestWithContext(ctx, method, url, body)
 	for k, v := range headers {
 		httpRequest.Header.Add(k, v)
 	}
 	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(httpRequest.Header))
-	httpClient := http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
+	
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
     defer cancel()
-	httpResponse, err := httpClient.Do(httpRequest.WithContext(ctx))
+	httpResponse, err := httpClient.Do(httpRequest)
 
 	if httpResponse == nil {
 		return httpResponse, err

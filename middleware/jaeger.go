@@ -10,8 +10,9 @@ import (
 )
 
 func JaegerTraceProvider() (*sdktrace.TracerProvider, error) {
-	// exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint("http://localhost:14268/api/traces")))
 	exp, err := jaeger.New(jaeger.WithAgentEndpoint(jaeger.WithAgentHost(os.Getenv("JAEGER_AGENT_HOST")), jaeger.WithAgentPort(os.Getenv("JAEGER_AGENT_PORT"))))
+	// Uncomment below line for local development
+	// exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint("http://localhost:14268/api/traces")))
 	if err != nil {
 		return nil, err
 	}
