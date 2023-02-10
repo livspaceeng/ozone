@@ -16,6 +16,7 @@ func JaegerTraceProvider() (*sdktrace.TracerProvider, error) {
 		return nil, err
 	}
 	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(sdktrace.TraceIDRatioBased(1.0)),
 		sdktrace.WithBatcher(exp),
 		sdktrace.WithResource(resource.NewWithAttributes(
 			semconv.SchemaURL,

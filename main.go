@@ -7,7 +7,7 @@ import (
 	"github.com/livspaceeng/ozone/middleware"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/contrib/propagators/b3"
 )
 
 // @title           Ozone API
@@ -40,6 +40,8 @@ func main() {
 		log.Error(err)
 	}
 	otel.SetTracerProvider(traceProvider)
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+	// b3propagator to track external server calls
+	p := b3.New(b3.WithInjectEncoding(b3.B3MultipleHeader | b3.B3SingleHeader))
+    otel.SetTextMapPropagator(p)
 	server.Init()
 }
