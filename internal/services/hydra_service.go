@@ -44,11 +44,11 @@ func (hydraSvc hydraService) GetSubjectByToken(ctx context.Context, hydraClient 
 	var hydraUrl, hydraPath string
 
 	if hydraClient == "accounts" {
-		hydraUrl = config.GetString("accounts.hydra.url")
-		hydraPath = config.GetString("accounts.hydra.path.introspect")
+		hydraUrl = config.GetString("hydra.accounts.url")
+		hydraPath = config.GetString("hydra.accounts.path.introspect")
 	} else {
-		hydraUrl = config.GetString("bouncer.hydra.url")
-		hydraPath = config.GetString("bouncer.hydra.path.introspect")
+		hydraUrl = config.GetString("hydra.bouncer.url")
+		hydraPath = config.GetString("hydra.bouncer.path.introspect")
 	} 
 	u, _ := url.ParseRequestURI(hydraUrl)
 	u.Path = hydraPath

@@ -2,13 +2,12 @@ log:
   level: info
 server:
   address: :32123
-bouncer:
-  hydra:
+hydra:
+  bouncer:
     url: http://localhost:4445
     path:
       introspect: /hydra/oauth2/introspect
-accounts:
-  hydra:
+  accounts:
     url: http://localhost:4445
     path:
       introspect: /customer-oauth/oauth2/introspect
