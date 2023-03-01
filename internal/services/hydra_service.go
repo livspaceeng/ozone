@@ -18,7 +18,7 @@ import (
 )
 
 type HydraService interface {
-	GetSubjectByToken(ctx context.Context, hydraClient string, bearer string) (int, string, error)
+	GetSubjectByToken(ctx context.Context, hydraClient string, hasHydra bool, bearer string) (int, string, error)
 }
 
 type hydraService struct {
@@ -33,7 +33,7 @@ func NewHydraService(httpClient *http.Client, cacheClient *cache.Cache) HydraSer
 	}
 }
 
-func (hydraSvc hydraService) GetSubjectByToken(ctx context.Context, hydraClient string, bearer string) (int, string, error) {
+func (hydraSvc hydraService) GetSubjectByToken(ctx context.Context, hydraClient string, hasHydra bool, bearer string) (int, string, error) {
 	name := "CallHydraToFetchSubject"
 	childCtx, span := otel.Tracer(name).Start(ctx, "CallHydraToFetchSubject")
 	defer span.End()
@@ -42,6 +42,11 @@ func (hydraSvc hydraService) GetSubjectByToken(ctx context.Context, hydraClient 
 	httpClient := utils.NewHttpClient(hydraSvc.httpClient)
 	var headers = make(map[string]string)
 	var hydraUrl, hydraPath string
+
+	if hasHydra == true && hydraClient == "" {
+		log.Error("Invalid query params")
+		return http.StatusBadRequest, "", errors.New("Invalid query params")
+	}
 
 	if hydraClient == "accounts" {
 		hydraUrl = config.GetString("hydra.accounts.url")
@@ -58,7 +63,7 @@ func (hydraSvc hydraService) GetSubjectByToken(ctx context.Context, hydraClient 
 		return http.StatusUnauthorized, "", errors.New("Bearer token absent")
 	}
 
-	validBearer := strings.Contains(bearer, "Bearer ") || strings.Contains(bearer, "bearer ")
+	validBearer := strings.HasPrefix(bearer, "Bearer ") || strings.HasPrefix(bearer, "bearer ")
 	if !validBearer {
 		log.Error("Authorization header format is not valid - ", bearer)
 		return http.StatusUnauthorized, "", errors.New("Authorization header format is not valid")
@@ -87,12 +92,12 @@ func (hydraSvc hydraService) GetSubjectByToken(ctx context.Context, hydraClient 
 	err = json.NewDecoder(resp.Body).Decode(&hydraResponse)
 	if err != nil {
 		log.Error("Decoding error: ", err.Error())
-		return http.StatusInternalServerError, "", err
+		return http.StatusFailedDependency, "", err
 	}
 	log.Info("Subject: ", hydraResponse.Subject)
 	if hydraResponse.Subject == "" {
 		log.Error("Subject is nil!")
-		return http.StatusUnauthorized, hydraResponse.Subject, err
+		return http.StatusUnauthorized, hydraResponse.Subject, errors.New("Invalid token")
 	}
 
 	//Cache Store

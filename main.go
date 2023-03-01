@@ -1,7 +1,6 @@
 package main
 
 import (
-	// "github.com/livspaceeng/ozone/configs"
 
 	"github.com/livspaceeng/ozone/internal/server"
 	"github.com/livspaceeng/ozone/middleware"

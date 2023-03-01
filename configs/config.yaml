@@ -15,8 +15,8 @@ keto:
   read:
     url: http://localhost:4466
     path:
-      check: /check
-      expand: /expand
+      check: /relation-tuples/check
+      expand: /relation-tuples/expand
   write:
     url: localhost:4467
 failsafe_interval: 60

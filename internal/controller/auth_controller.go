@@ -47,38 +47,45 @@ func NewAuthController(hydraSvc service.HydraService, ketoSvc service.KetoServic
 func (a authController) Check(c *gin.Context) {
 	//Hydra
 	headers := c.Request.Header
-	hydraClient := c.Query("hydra")
 	bearer := headers.Get("Authorization")
+	var (
+		namespace, relation, object, hydraClient string = "", "", "", ""
+		hasHydra bool = false
+	)
+	queries := strings.Split(c.Request.URL.RawQuery, "&")
+	for _, query := range queries {
+		if strings.HasPrefix(query, "namespace=") {
+			namespace = strings.Split(query, "=")[1]
+		} else if strings.HasPrefix(query, "relation=") {
+			relation = strings.Split(query, "=")[1]
+		} else if strings.HasPrefix(query, "object=") {
+			object = strings.Split(query, "=")[1]
+		} else if strings.HasPrefix(query, "hydra=") {
+			hasHydra = true
+			hydraClient = strings.Split(query, "=")[1]
+		}
+	}
 
-	hydraStatus, hydraResponse, err := a.hydraService.GetSubjectByToken(c.Request.Context(), hydraClient, bearer)
-	if hydraStatus != http.StatusOK {
+	hydraStatus, hydraResponse, err := a.hydraService.GetSubjectByToken(c.Request.Context(), hydraClient, hasHydra, bearer)
+	if hydraStatus == http.StatusFailedDependency {
 		c.JSON(hydraStatus, err)
+		return
+	} else if hydraStatus == http.StatusUnauthorized || hydraStatus == http.StatusBadRequest {
+		c.JSON(hydraStatus, err.Error())
 		return
 	}
 
 	//Keto
-	var namespace, relation, object string = "", "", ""
-	queries := strings.Split(c.Request.URL.RawQuery, "&")
-	for _, query := range queries {
-		if strings.HasPrefix(query, "namespace") {
-			namespace = strings.Split(query, "=")[1]
-		} else if strings.HasPrefix(query, "relation") {
-			relation = strings.Split(query, "=")[1]
-		}  else if strings.HasPrefix(query, "object") {
-			object = strings.Split(query, "=")[1]
-		}
-	}
-
 	ketoStatus, ketoResponse, err := a.ketoService.ValidatePolicy(c.Request.Context(), namespace, relation, object, hydraResponse)
 
-	if ketoStatus == http.StatusOK {
+	if ketoStatus == http.StatusOK || ketoStatus == http.StatusForbidden {
 		c.JSON(ketoStatus, ketoResponse)
 		return
-	} else if ketoStatus == http.StatusForbidden {
-		c.JSON(ketoStatus, ketoResponse)
+	} else if ketoStatus == http.StatusFailedDependency {
+		c.JSON(ketoStatus, err)
 		return
 	} else {
-		c.JSON(ketoStatus, err)
+		c.JSON(ketoStatus, err.Error())
 	}
 }
 
@@ -107,19 +114,19 @@ func (a authController) Query(c *gin.Context) {
 	var namespace, relation, object, subjectId, subjectSetNamespace, subjectSetRelation, subjectSetObject string = "", "", "", "", "", "", ""
 	queries := strings.Split(c.Request.URL.RawQuery, "&")
 	for _, query := range queries {
-		if strings.HasPrefix(query, "namespace") {
+		if strings.HasPrefix(query, "namespace=") {
 			namespace = strings.Split(query, "=")[1]
-		} else if strings.HasPrefix(query, "relation") {
+		} else if strings.HasPrefix(query, "relation=") {
 			relation = strings.Split(query, "=")[1]
-		}  else if strings.HasPrefix(query, "object") {
+		}  else if strings.HasPrefix(query, "object=") {
 			object = strings.Split(query, "=")[1]
-		} else if strings.HasPrefix(query, "subject_id") {
+		} else if strings.HasPrefix(query, "subject_id=") {
 			subjectId = strings.Split(query, "=")[1]
-		} else if strings.HasPrefix(query, "subject_set.namespace") {
+		} else if strings.HasPrefix(query, "subject_set.namespace=") {
 			subjectSetNamespace = strings.Split(query, "=")[1]
-		} else if strings.HasPrefix(query, "subject_set.relation") {
+		} else if strings.HasPrefix(query, "subject_set.relation=") {
 			subjectSetRelation = strings.Split(query, "=")[1]
-		} else if strings.HasPrefix(query, "subject_set.object") {
+		} else if strings.HasPrefix(query, "subject_set.object=") {
 			subjectSetObject = strings.Split(query, "=")[1]
 		}
 	}
@@ -135,14 +142,14 @@ func (a authController) Query(c *gin.Context) {
 		ketoStatus, ketoResponse, err = a.ketoService.ValidatePolicyWithSet(c.Request.Context(), namespace, relation, object, subjectSetNamespace, subjectSetRelation, subjectSetObject)
 	}
 
-	if ketoStatus == http.StatusOK {
+	if ketoStatus == http.StatusOK || ketoStatus == http.StatusForbidden {
 		c.JSON(ketoStatus, ketoResponse)
 		return
-	} else if ketoStatus == http.StatusForbidden {
-		c.JSON(ketoStatus, ketoResponse)
+	} else if ketoStatus == http.StatusFailedDependency {
+		c.JSON(ketoStatus, err)
 		return
 	} else {
-		c.JSON(ketoStatus, err)
+		c.JSON(ketoStatus, err.Error())
 	}
 }
 
@@ -165,24 +172,33 @@ func (a authController) Query(c *gin.Context) {
 // @Failure      500             {object}  model.KetoResponse
 // @Router       /auth/expand [get]
 func (a authController) Expand(c *gin.Context) {
-	var namespace, relation, object string = "", "", ""
+	var (
+		namespace, relation, object, maxDepth string = "", "", "", ""
+		hasDepth bool = false
+	)
 	queries := strings.Split(c.Request.URL.RawQuery, "&")
 	for _, query := range queries {
-		if strings.HasPrefix(query, "namespace") {
+		if strings.HasPrefix(query, "namespace=") {
 			namespace = strings.Split(query, "=")[1]
-		} else if strings.HasPrefix(query, "relation") {
+		} else if strings.HasPrefix(query, "relation=") {
 			relation = strings.Split(query, "=")[1]
-		}  else if strings.HasPrefix(query, "object") {
+		} else if strings.HasPrefix(query, "object=") {
 			object = strings.Split(query, "=")[1]
-		}
+		} else if strings.HasPrefix(query, "max-depth=") {
+			hasDepth = true
+			maxDepth = strings.Split(query, "=")[1]
+		} 
 	}
 
-	ketoStatus, ketoResponse, err := a.ketoService.ExpandPolicy(c.Request.Context(), namespace, relation, object)
+	ketoStatus, ketoResponse, err := a.ketoService.ExpandPolicy(c.Request.Context(), namespace, relation, object, maxDepth, hasDepth)
 
-	if ketoStatus == http.StatusOK {
+	if ketoStatus == http.StatusOK || ketoStatus == http.StatusNotFound {
 		c.JSON(ketoStatus, ketoResponse)
 		return
-	} else {
+	} else if ketoStatus == http.StatusFailedDependency {
 		c.JSON(ketoStatus, err)
+		return
+	} else {
+		c.JSON(ketoStatus, err.Error())
 	}
 }
