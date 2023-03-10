@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/livspaceeng/ozone/internal/server"
+	"github.com/livspaceeng/ozone/internal/utils"
 	"github.com/livspaceeng/ozone/configs"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -20,6 +21,7 @@ type input struct{
 	subjectSetObject string
 	subjectSetRelation string
 	authPrefix string
+	maxDepth string
 }
 
 type expectation struct{
@@ -30,6 +32,7 @@ type expectation struct{
 
 func TestAuthController_Check(t *testing.T) {
 	configs.Init()
+	utils.Init()
 	config := configs.GetConfig()
 	r := server.NewRouter()
 
@@ -46,7 +49,7 @@ func TestAuthController_Check(t *testing.T) {
 			},
 			expected: expectation{
 				status: 200,
-				out: "\"com.livspace.auth;bouncer;users;6177\"",
+				out: "\"com.livspace.auth;bouncer;users;9338\"",
 				err: nil,
 				},
 			},
@@ -59,7 +62,7 @@ func TestAuthController_Check(t *testing.T) {
 			},
 			expected: expectation{
 				status: 403,
-				out: "\"com.livspace.auth;bouncer;users;6177\"",
+				out: "\"com.livspace.auth;bouncer;users;9338\"",
 				err: nil,
 				},
 			},
@@ -72,7 +75,7 @@ func TestAuthController_Check(t *testing.T) {
 			},
 			expected: expectation{
 				status: 400,
-				out: "{}",
+				out: "\"Invalid query params\"",
 				err: nil,
 				},
 			},
@@ -85,7 +88,7 @@ func TestAuthController_Check(t *testing.T) {
 			},
 			expected: expectation{
 				status: 401,
-				out: "{}",
+				out: "\"Authorization header format is not valid\"",
 				err: nil,
 				},
 			},
@@ -94,7 +97,7 @@ func TestAuthController_Check(t *testing.T) {
 	for scenario, tt := range tests {
 		t.Run(scenario, func(t *testing.T) {
 			req, _ := http.NewRequest("GET", "/api/v1/auth/check?namespace="+tt.in.namespace+"&relation="+tt.in.relation+"&object="+tt.in.object, nil)
-			req.Header.Add("Authorization",tt.in.authPrefix+config.GetString("bouncer.hydra.access_token"))
+			req.Header.Add("Authorization",tt.in.authPrefix+config.GetString("hydra.bouncer.access_token"))
 			w := httptest.NewRecorder()
 			r.ServeHTTP(w, req)
 			log.Info("Response: ", w.Body)
@@ -117,11 +120,11 @@ func TestAuthController_Query(t *testing.T) {
 				namespace: "com.livspace.auth",
 				relation: "member",
 				object: "com.livspace.auth;bouncer;roles;BOUNCER_VIEWER",
-				subjectId: "com.livspace.auth;bouncer;users;6177",
+				subjectId: "com.livspace.auth;bouncer;users;9338",
 			},
 			expected: expectation{
 				status: 200,
-				out: "\"com.livspace.auth;bouncer;users;6177\"",
+				out: "\"com.livspace.auth;bouncer;users;9338\"",
 				err: nil,
 				},
 			},
@@ -177,7 +180,7 @@ func TestAuthController_Query(t *testing.T) {
 			},
 			expected: expectation{
 				status: 400,
-				out: "{}",
+				out: "\"Invalid query params\"",
 				err: nil,
 				},
 			},
@@ -192,7 +195,7 @@ func TestAuthController_Query(t *testing.T) {
 			},
 			expected: expectation{
 				status: 400,
-				out: "{}",
+				out: "\"Invalid query params\"",
 				err: nil,
 				},
 			},
@@ -226,6 +229,7 @@ func TestAuthController_Expand(t *testing.T) {
 				namespace: "com.livspace.auth",
 				relation: "get",
 				object: "com.livspace.auth;bouncer;users",
+				maxDepth: "2",
 			},
 			expected: expectation{
 				status: 200,
@@ -237,9 +241,22 @@ func TestAuthController_Expand(t *testing.T) {
 				namespace: "com.livspace.auth",
 				relation: "get",
 				object: "com.livspace.auth;bouncer;user",
+				maxDepth: "1",
 			},
 			expected: expectation{
-				status: 200,
+				status: 404,
+				err: nil,
+				},
+			},
+		"InvalidMaxDepth": {
+			in: input{
+				namespace: "com.livspace.auth",
+				relation: "get",
+				object: "com.livspace.auth;bouncer;users",
+				maxDepth: "abc",
+			},
+			expected: expectation{
+				status: 400,
 				err: nil,
 				},
 			},
@@ -248,6 +265,7 @@ func TestAuthController_Expand(t *testing.T) {
 				namespace: "",
 				relation: "",
 				object: "",
+				maxDepth: "0",
 			},
 			expected: expectation{
 				status: 400,
@@ -258,7 +276,7 @@ func TestAuthController_Expand(t *testing.T) {
 
 	for scenario, tt := range tests {
 		t.Run(scenario, func(t *testing.T) {
-			req, _ := http.NewRequest("GET", "/api/v1/auth/expand?namespace="+tt.in.namespace+"&relation="+tt.in.relation+"&object="+tt.in.object, nil)
+			req, _ := http.NewRequest("GET", "/api/v1/auth/expand?namespace="+tt.in.namespace+"&relation="+tt.in.relation+"&object="+tt.in.object+"&max-depth="+tt.in.maxDepth, nil)
 			w := httptest.NewRecorder()
 			r.ServeHTTP(w, req)
 			assert.Equal(t, tt.expected.status, w.Code)

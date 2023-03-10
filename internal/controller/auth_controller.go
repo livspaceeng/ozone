@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	service "github.com/livspaceeng/ozone/internal/services"
+	"github.com/livspaceeng/ozone/internal/utils"
 )
 
 type AuthController interface {
@@ -54,11 +55,11 @@ func (a authController) Check(c *gin.Context) {
 	)
 	queries := strings.Split(c.Request.URL.RawQuery, "&")
 	for _, query := range queries {
-		if strings.HasPrefix(query, "namespace=") {
+		if strings.HasPrefix(query, utils.NamespaceString) {
 			namespace = strings.Split(query, "=")[1]
-		} else if strings.HasPrefix(query, "relation=") {
+		} else if strings.HasPrefix(query, utils.RelationString) {
 			relation = strings.Split(query, "=")[1]
-		} else if strings.HasPrefix(query, "object=") {
+		} else if strings.HasPrefix(query, utils.ObjectString) {
 			object = strings.Split(query, "=")[1]
 		} else if strings.HasPrefix(query, "hydra=") {
 			hasHydra = true
@@ -114,11 +115,11 @@ func (a authController) Query(c *gin.Context) {
 	var namespace, relation, object, subjectId, subjectSetNamespace, subjectSetRelation, subjectSetObject string = "", "", "", "", "", "", ""
 	queries := strings.Split(c.Request.URL.RawQuery, "&")
 	for _, query := range queries {
-		if strings.HasPrefix(query, "namespace=") {
+		if strings.HasPrefix(query, utils.NamespaceString) {
 			namespace = strings.Split(query, "=")[1]
-		} else if strings.HasPrefix(query, "relation=") {
+		} else if strings.HasPrefix(query, utils.RelationString) {
 			relation = strings.Split(query, "=")[1]
-		}  else if strings.HasPrefix(query, "object=") {
+		}  else if strings.HasPrefix(query, utils.ObjectString) {
 			object = strings.Split(query, "=")[1]
 		} else if strings.HasPrefix(query, "subject_id=") {
 			subjectId = strings.Split(query, "=")[1]
@@ -178,15 +179,15 @@ func (a authController) Expand(c *gin.Context) {
 	)
 	queries := strings.Split(c.Request.URL.RawQuery, "&")
 	for _, query := range queries {
-		if strings.HasPrefix(query, "namespace=") {
-			namespace = strings.Split(query, "=")[1]
-		} else if strings.HasPrefix(query, "relation=") {
-			relation = strings.Split(query, "=")[1]
-		} else if strings.HasPrefix(query, "object=") {
+		if strings.HasPrefix(query, utils.ObjectString) {
 			object = strings.Split(query, "=")[1]
+		} else if strings.HasPrefix(query, utils.NamespaceString) {
+			namespace = strings.Split(query, "=")[1]
 		} else if strings.HasPrefix(query, "max-depth=") {
 			hasDepth = true
 			maxDepth = strings.Split(query, "=")[1]
+		} else if strings.HasPrefix(query, utils.RelationString) {
+			relation = strings.Split(query, "=")[1]
 		} 
 	}
 

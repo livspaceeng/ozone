@@ -35,8 +35,8 @@ func (ketoSvc ketoService) ValidatePolicy (ctx context.Context, namespace string
 	defer span.End()
 
 	if namespace=="" || relation=="" || object=="" || hydraResponse=="" {
-		log.Error("Invalid query params")
-		return http.StatusBadRequest, "", errors.New("Invalid query params")
+		log.Error(utils.InvalidError)
+		return http.StatusBadRequest, "", errors.New(utils.InvalidError)
 	}
 
 	ketoResponse, r, err := utils.GetKetoReadClient().PermissionApi.CheckPermission(childCtx).
@@ -46,12 +46,12 @@ func (ketoSvc ketoService) ValidatePolicy (ctx context.Context, namespace string
 		SubjectId(hydraResponse).
 		Execute()
 	if err != nil {
-		log.Error("Error when calling `PermissionApi.CheckPermission``:\n", err, " Http Response: ", r)
+		log.Error("Error when calling `PermissionApi.CheckPermission``:\n", err, utils.HttpResponse, r)
 		return http.StatusFailedDependency, "", err
 	}
 
 	if !ketoResponse.Allowed {
-		log.Info("Policy is not created for subject: ", hydraResponse, " Namespace: ", namespace, " Relation: ", relation, " Object: ", object)
+		log.Info("Policy is not created for subject: ", hydraResponse, " Namespace: ", namespace, utils.RelationLog, relation, utils.ObjectLog, object)
 		return http.StatusForbidden, hydraResponse, err
 	}
 	return http.StatusOK, hydraResponse, err
@@ -63,8 +63,8 @@ func (ketoSvc ketoService) ValidatePolicyWithSet (ctx context.Context, namespace
 	defer span.End()
 
 	if namespace=="" || relation=="" || object=="" || subjectSetNamespace=="" || subjectSetRelation=="" || subjectSetObject=="" {
-		log.Error("Invalid query params")
-		return http.StatusBadRequest, "", errors.New("Invalid query params")
+		log.Error(utils.InvalidError)
+		return http.StatusBadRequest, "", errors.New(utils.InvalidError)
 	}
 
 	ketoResponse, r, err := utils.GetKetoReadClient().PermissionApi.CheckPermission(childCtx).
@@ -76,12 +76,12 @@ func (ketoSvc ketoService) ValidatePolicyWithSet (ctx context.Context, namespace
 		SubjectSetObject(subjectSetObject).
 		Execute()
 	if err != nil {
-		log.Error("Error when calling `PermissionApi.CheckPermission``:\n", err, " Http Response: ", r)
+		log.Error("Error when calling `PermissionApi.CheckPermission``:\n", err, utils.HttpResponse, r)
 		return http.StatusFailedDependency, "", err
 	}
 
 	if !ketoResponse.Allowed {
-		log.Info("Policy is not created for subjectSetNamespace: ", subjectSetNamespace, " subjectSetRelation: ", subjectSetRelation, " subjectSetObject: ", subjectSetObject, " Namespace: ", namespace, " Relation: ", relation, " Object: ", object)
+		log.Info("Policy is not created for subjectSetNamespace: ", subjectSetNamespace, " subjectSetRelation: ", subjectSetRelation, " subjectSetObject: ", subjectSetObject, " Namespace: ", namespace, utils.RelationLog, relation, utils.ObjectLog, object)
 		return http.StatusForbidden, "Policy does not exist", err
 	}
 	return http.StatusOK, "Policy exists", err
@@ -98,8 +98,8 @@ func (ketoSvc ketoService) ExpandPolicy (ctx context.Context, namespace string, 
 		err error
 	)
 	if namespace=="" || relation=="" || object=="" || (hasDepth==true && maxDepth==""){
-		log.Error("Invalid query params")
-		return http.StatusBadRequest, ketoResponse, errors.New("Invalid query params")
+		log.Error(utils.InvalidError)
+		return http.StatusBadRequest, ketoResponse, errors.New(utils.InvalidError)
 	}
 	if maxDepth != "" {
 		depth, err = strconv.ParseInt(maxDepth, 10, 64)
@@ -116,7 +116,7 @@ func (ketoSvc ketoService) ExpandPolicy (ctx context.Context, namespace string, 
 		MaxDepth(depth).
 		Execute()
 	if err != nil {
-		log.Error("Error when calling `PermissionApi.ExpandPermissions``:\n", err, " Http Response: ", r, "Response Body: ", resp)
+		log.Error("Error when calling `PermissionApi.ExpandPermissions``:\n", err, utils.HttpResponse, r, "Response Body: ", resp)
 		return http.StatusFailedDependency, ketoResponse, err
 	}
 
@@ -130,7 +130,7 @@ func (ketoSvc ketoService) ExpandPolicy (ctx context.Context, namespace string, 
 	json.Unmarshal([]byte(string(encodedBody)), &ketoResponse)
 	status, _ := ketoResponse["code"].(float64)
 	if status == http.StatusNotFound {
-		log.Info("Subject set not found with Namespace: ", namespace, " Relation: ", relation, " Object: ", object)
+		log.Info("Subject set not found with Namespace: ", namespace, utils.RelationLog, relation, utils.ObjectLog, object)
 		return http.StatusNotFound, ketoResponse, err
 	}
 	return http.StatusOK, ketoResponse, err
