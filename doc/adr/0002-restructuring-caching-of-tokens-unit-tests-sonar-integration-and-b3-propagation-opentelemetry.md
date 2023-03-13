@@ -12,6 +12,7 @@ Accepted
 * Handling semicolon delimitation in url 
 * Two request take place in check API in which Hydra request can be cached to save time
 * Following SLIs to overcome SLOs
+* keto go client will be more convenient to call keto server instead of using http client
 
 ## Decision
 
@@ -20,6 +21,7 @@ Accepted
 * Cached hydra tokens
 * Implemented Unit tests and sonar integration 
 * Implemented B3 Propagator opentelemetry 
+* Keto go client implemented to call keto server v0.11
 
 ## Consequences
 
