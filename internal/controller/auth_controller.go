@@ -121,13 +121,13 @@ func (a authController) Query(c *gin.Context) {
 			relation = strings.Split(query, "=")[1]
 		}  else if strings.HasPrefix(query, utils.ObjectString) {
 			object = strings.Split(query, "=")[1]
-		} else if strings.HasPrefix(query, "subject_id=") {
+		} else if strings.HasPrefix(query, "subject-id=") {
 			subjectId = strings.Split(query, "=")[1]
-		} else if strings.HasPrefix(query, "subject_set.namespace=") {
+		} else if strings.HasPrefix(query, "subject-set-namespace=") {
 			subjectSetNamespace = strings.Split(query, "=")[1]
-		} else if strings.HasPrefix(query, "subject_set.relation=") {
+		} else if strings.HasPrefix(query, "subject-set-relation=") {
 			subjectSetRelation = strings.Split(query, "=")[1]
-		} else if strings.HasPrefix(query, "subject_set.object=") {
+		} else if strings.HasPrefix(query, "subject-set-object=") {
 			subjectSetObject = strings.Split(query, "=")[1]
 		}
 	}
