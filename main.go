@@ -1,10 +1,12 @@
 package main
 
 import (
-	// "github.com/livspaceeng/ozone/configs"
 
 	"github.com/livspaceeng/ozone/internal/server"
+	"github.com/livspaceeng/ozone/middleware"
 	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/contrib/propagators/b3"
 )
 
 // @title           Ozone API
@@ -32,5 +34,13 @@ func main() {
 		logLevel = log.InfoLevel
 	}
 	log.SetLevel(logLevel)
+	traceProvider, err := middleware.JaegerTraceProvider()
+	if err != nil {
+		log.Error(err)
+	}
+	otel.SetTracerProvider(traceProvider)
+	// b3propagator to track external server calls
+	p := b3.New(b3.WithInjectEncoding(b3.B3MultipleHeader | b3.B3SingleHeader))
+    otel.SetTextMapPropagator(p)
 	server.Init()
 }

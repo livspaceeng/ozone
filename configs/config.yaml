@@ -3,13 +3,20 @@ log:
 server:
   address: :32123
 hydra:
-  url: http://localhost:4445
-  path:
-    introspect: /oauth2/introspect
+  bouncer:
+    url: http://localhost:4445
+    path:
+      introspect: /hydra/oauth2/introspect
+  accounts:
+    url: http://localhost:4445
+    path:
+      introspect: /customer-oauth/oauth2/introspect
 keto:
   read:
     url: http://localhost:4466
     path:
-      check: /check
+      check: /relation-tuples/check
+      expand: /relation-tuples/expand
   write:
     url: localhost:4467
+failsafe_interval: 60
