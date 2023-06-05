@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -57,10 +58,13 @@ func (a authController) Check(c *gin.Context) {
 	for _, query := range queries {
 		if strings.HasPrefix(query, utils.NamespaceString) {
 			namespace = strings.Split(query, "=")[1]
+			namespace, _ = url.QueryUnescape(namespace)
 		} else if strings.HasPrefix(query, utils.RelationString) {
 			relation = strings.Split(query, "=")[1]
+			relation, _ = url.QueryUnescape(relation)
 		} else if strings.HasPrefix(query, utils.ObjectString) {
 			object = strings.Split(query, "=")[1]
+			object, _ = url.QueryUnescape(object)
 		} else if strings.HasPrefix(query, "hydra=") {
 			hasHydra = true
 			hydraClient = strings.Split(query, "=")[1]
@@ -117,18 +121,25 @@ func (a authController) Query(c *gin.Context) {
 	for _, query := range queries {
 		if strings.HasPrefix(query, utils.NamespaceString) {
 			namespace = strings.Split(query, "=")[1]
+			namespace, _ = url.QueryUnescape(namespace)
 		} else if strings.HasPrefix(query, utils.RelationString) {
 			relation = strings.Split(query, "=")[1]
+			relation, _ = url.QueryUnescape(relation)
 		}  else if strings.HasPrefix(query, utils.ObjectString) {
 			object = strings.Split(query, "=")[1]
+			object, _ = url.QueryUnescape(object)
 		} else if strings.HasPrefix(query, "subject-id=") {
 			subjectId = strings.Split(query, "=")[1]
+			subjectId, _ = url.QueryUnescape(subjectId)
 		} else if strings.HasPrefix(query, "subject-set-namespace=") {
 			subjectSetNamespace = strings.Split(query, "=")[1]
+			subjectSetNamespace, _ = url.QueryUnescape(subjectSetNamespace)
 		} else if strings.HasPrefix(query, "subject-set-relation=") {
 			subjectSetRelation = strings.Split(query, "=")[1]
+			subjectSetRelation, _ = url.QueryUnescape(subjectSetRelation)
 		} else if strings.HasPrefix(query, "subject-set-object=") {
 			subjectSetObject = strings.Split(query, "=")[1]
+			subjectSetObject, _ = url.QueryUnescape(subjectSetObject)
 		}
 	}
 
@@ -181,13 +192,16 @@ func (a authController) Expand(c *gin.Context) {
 	for _, query := range queries {
 		if strings.HasPrefix(query, utils.ObjectString) {
 			object = strings.Split(query, "=")[1]
+			object, _ = url.QueryUnescape(object)
 		} else if strings.HasPrefix(query, utils.NamespaceString) {
 			namespace = strings.Split(query, "=")[1]
+			namespace, _ = url.QueryUnescape(namespace)
 		} else if strings.HasPrefix(query, "max-depth=") {
 			hasDepth = true
 			maxDepth = strings.Split(query, "=")[1]
 		} else if strings.HasPrefix(query, utils.RelationString) {
 			relation = strings.Split(query, "=")[1]
+			relation, _ = url.QueryUnescape(relation)
 		} 
 	}
 
