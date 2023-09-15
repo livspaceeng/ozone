@@ -51,8 +51,8 @@ func (a authController) Check(c *gin.Context) {
 	headers := c.Request.Header
 	bearer := headers.Get("Authorization")
 	var (
-		namespace, relation, object, hydraClient string = "", "", "", ""
-		hasHydra bool = false
+		namespace, relation, object, issuer string = "", "", "", ""
+		hasIssuer bool = false
 	)
 	queries := strings.Split(c.Request.URL.RawQuery, "&")
 	for _, query := range queries {
@@ -65,13 +65,13 @@ func (a authController) Check(c *gin.Context) {
 		} else if strings.HasPrefix(query, utils.ObjectString) {
 			object = strings.Split(query, "=")[1]
 			object, _ = url.QueryUnescape(object)
-		} else if strings.HasPrefix(query, "hydra=") {
-			hasHydra = true
-			hydraClient = strings.Split(query, "=")[1]
+		} else if strings.HasPrefix(query, "issuer=") {
+			hasIssuer = true
+			issuer = strings.Split(query, "=")[1]
 		}
 	}
 
-	hydraStatus, hydraResponse, err := a.hydraService.GetSubjectByToken(c.Request.Context(), hydraClient, hasHydra, bearer)
+	hydraStatus, hydraResponse, err := a.hydraService.GetSubjectByToken(c.Request.Context(), issuer, hasIssuer, bearer)
 	if hydraStatus == http.StatusFailedDependency {
 		c.JSON(hydraStatus, err)
 		return

@@ -18,7 +18,7 @@ import (
 )
 
 type HydraService interface {
-	GetSubjectByToken(ctx context.Context, hydraClient string, hasHydra bool, bearer string) (int, string, error)
+	GetSubjectByToken(ctx context.Context, issuer string, hasIssuer bool, bearer string) (int, string, error)
 }
 
 type hydraService struct {
@@ -33,7 +33,7 @@ func NewHydraService(httpClient *http.Client, cacheClient *cache.Cache) HydraSer
 	}
 }
 
-func (hydraSvc hydraService) GetSubjectByToken(ctx context.Context, hydraClient string, hasHydra bool, bearer string) (int, string, error) {
+func (hydraSvc hydraService) GetSubjectByToken(ctx context.Context, issuer string, hasIssuer bool, bearer string) (int, string, error) {
 	name := "CallHydraToFetchSubject"
 	childCtx, span := otel.Tracer(name).Start(ctx, "CallHydraToFetchSubject")
 	defer span.End()
@@ -41,22 +41,25 @@ func (hydraSvc hydraService) GetSubjectByToken(ctx context.Context, hydraClient 
 	config := configs.GetConfig()
 	httpClient := utils.NewHttpClient(hydraSvc.httpClient)
 	var headers = make(map[string]string)
-	var hydraUrl, hydraPath string
+	var issuerUrl, issuerPath string
 
-	if hasHydra == true && hydraClient == "" {
+	if hasIssuer == true && issuer == "" {
 		log.Error("Invalid query params")
 		return http.StatusBadRequest, "", errors.New("Invalid query params")
 	}
 
-	if hydraClient == "accounts" {
-		hydraUrl = config.GetString("hydra.accounts.url")
-		hydraPath = config.GetString("hydra.accounts.path.introspect")
+	if issuer == "accounts" {
+		issuerUrl = config.GetString("issuer.accounts.url")
+		issuerPath = config.GetString("issuer.accounts.path.introspect")
+	} else if issuer == "xpert" {
+		issuerUrl = config.GetString("issuer.xpert.url")
+		issuerPath = config.GetString("issuer.xpert.path.introspect")
 	} else {
-		hydraUrl = config.GetString("hydra.bouncer.url")
-		hydraPath = config.GetString("hydra.bouncer.path.introspect")
+		issuerUrl = config.GetString("issuer.bouncer.url")
+		issuerPath = config.GetString("issuer.bouncer.path.introspect")
 	} 
-	u, _ := url.ParseRequestURI(hydraUrl)
-	u.Path = hydraPath
+	u, _ := url.ParseRequestURI(issuerUrl)
+	u.Path = issuerPath
 
 	if len(bearer) <= 0 {
 		log.Error("Bearer token absent")
