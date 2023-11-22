@@ -97,7 +97,7 @@ func (hydraSvc hydraService) GetSubjectByToken(ctx context.Context, issuer strin
 	var hydraResponse model.HydraResponse
 	err = json.NewDecoder(resp.Body).Decode(&hydraResponse)
 	if err != nil {
-		log.Error("Decoding error: ", err.Error())
+		log.Error("Decoding error: ", err.Error(), " Response: ", resp.Body)
 		return http.StatusFailedDependency, "", err
 	}
 	log.Info("Subject: ", hydraResponse.Subject)
