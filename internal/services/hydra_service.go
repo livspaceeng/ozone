@@ -54,6 +54,9 @@ func (hydraSvc hydraService) GetSubjectByToken(ctx context.Context, issuer strin
 	} else if issuer == "xpert" {
 		issuerUrl = config.GetString("issuer.xpert.url")
 		issuerPath = config.GetString("issuer.xpert.path.introspect")
+	} else if issuer == "tars" {
+		issuerUrl = config.GetString("issuer.tars.url")
+		issuerPath = config.GetString("issuer.tars.path.introspect")
 	} else {
 		issuerUrl = config.GetString("issuer.bouncer.url")
 		issuerPath = config.GetString("issuer.bouncer.path.introspect")
