@@ -47,9 +47,9 @@ func NewRouter() *gin.Engine {
 
 func CorsMiddleware() gin.HandlerFunc {
     return func(c *gin.Context) {
-        c.Writer.Header().Set("Access-Control-Allow-Origin", ".*.livspace.com")
+        c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
         c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-        c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, content-encoding")
+        c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, x-requested-by, content-encoding")
         c.Writer.Header().Set("Access-Control-Allow-Methods", "OPTIONS, GET")
 
         if c.Request.Method == "OPTIONS" {
