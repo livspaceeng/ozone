@@ -31,6 +31,7 @@ func NewRouter() *gin.Engine {
 	router.Use(otelgin.Middleware("ozone"))
 	docs.SwaggerInfo.BasePath = "/api/v1"
 
+	router.Use(CorsMiddleware())
 	router.GET("/health", healthController.Status)
 
 	authResolver := router.Group("/api/v1/auth")
@@ -42,4 +43,20 @@ func NewRouter() *gin.Engine {
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	return router
+}
+
+func CorsMiddleware() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        c.Writer.Header().Set("Access-Control-Allow-Origin", ".*.livspace.com")
+        c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+        c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, content-encoding")
+        c.Writer.Header().Set("Access-Control-Allow-Methods", "OPTIONS, GET")
+
+        if c.Request.Method == "OPTIONS" {
+            c.AbortWithStatus(204)
+            return
+        }
+
+        c.Next()
+    }
 }
