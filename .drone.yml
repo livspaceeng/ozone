@@ -1,0 +1,13 @@
+---
+kind: template
+load: container_v1.yaml
+name: build-and-push
+data:
+  build:
+    containerRepo: livspace/ozone
+    needIAMCreds: false
+    args: AWS_DEFAULT_REGION=ap-southeast-1
+    disableCache: true
+  promote:
+    deploymentRepo: core-infra-deployments
+    appName: auth
