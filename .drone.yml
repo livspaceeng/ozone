@@ -11,4 +11,3 @@ data:
   promote:
     deploymentRepo: core-infra-deployments
     appName: auth
-
