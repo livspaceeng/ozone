@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -8,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	service "github.com/livspaceeng/ozone/internal/services"
 	"github.com/livspaceeng/ozone/internal/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 type AuthController interface {
@@ -16,15 +18,15 @@ type AuthController interface {
 	Expand(c *gin.Context)
 }
 
-type authController struct{
+type authController struct {
 	hydraService service.HydraService
-	ketoService service.KetoService
+	ketoService  service.KetoService
 }
 
 func NewAuthController(hydraSvc service.HydraService, ketoSvc service.KetoService) AuthController {
 	return &authController{
 		hydraService: hydraSvc,
-		ketoService: ketoSvc,
+		ketoService:  ketoSvc,
 	}
 }
 
@@ -39,7 +41,7 @@ func NewAuthController(hydraSvc service.HydraService, ketoSvc service.KetoServic
 // @Param        object         query      string  true  "resource"
 // @Param        relation       query      string  true  "access-type"
 // @Param        hydra          query      string  false "Default value is Bouncer. Use 'accounts' value for Accounts Hydra"
-// @Param        Authorization  header     string  true  "Bearer <Bouncer_access_token>" 
+// @Param        Authorization  header     string  true  "Bearer <Bouncer_access_token>"
 // @Success      200         {string}  model.KetoResponse
 // @Failure      400         {object}  model.KetoResponse
 // @Failure      401         {object}  model.KetoResponse
@@ -51,8 +53,8 @@ func (a authController) Check(c *gin.Context) {
 	headers := c.Request.Header
 	bearer := headers.Get("Authorization")
 	var (
-		namespace, relation, object, issuer string = "", "", "", ""
-		hasIssuer bool = false
+		namespace, relation, object, subject, subjectRelation, issuer string = "", "", "", "", "", ""
+		hasIssuer, hasSubject, hasSubjectRelation                     bool   = false, false, false
 	)
 	queries := strings.Split(c.Request.URL.RawQuery, "&")
 	for _, query := range queries {
@@ -65,6 +67,14 @@ func (a authController) Check(c *gin.Context) {
 		} else if strings.HasPrefix(query, utils.ObjectString) {
 			object = strings.Split(query, "=")[1]
 			object, _ = url.QueryUnescape(object)
+		} else if strings.HasPrefix(query, utils.SubjectString) {
+			hasSubject = true
+			subject = strings.Split(query, "=")[1]
+			subject, _ = url.QueryUnescape(subject)
+		} else if strings.HasPrefix(query, utils.SubjectRelationString) {
+			hasSubjectRelation = true
+			subjectRelation = strings.Split(query, "=")[1]
+			subjectRelation, _ = url.QueryUnescape(subjectRelation)
 		} else if strings.HasPrefix(query, "issuer=") {
 			hasIssuer = true
 			issuer = strings.Split(query, "=")[1]
@@ -83,7 +93,27 @@ func (a authController) Check(c *gin.Context) {
 	//Keto
 	ketoStatus, ketoResponse, err := a.ketoService.ValidatePolicy(c.Request.Context(), namespace, relation, object, hydraResponse)
 
-	if ketoStatus == http.StatusOK || ketoStatus == http.StatusForbidden {
+	if ketoStatus == http.StatusOK {
+		if hasSubject && subject == "" && hasSubjectRelation && subjectRelation == "" {
+			log.Error("Invalid query params")
+			c.JSON(http.StatusBadRequest, errors.New("invalid query params"))
+			return
+		} else if len(subject) > 0 && len(subjectRelation) > 0 {
+			subjectStatus, subjectResponse, err := a.ketoService.ValidatePolicy(c.Request.Context(), namespace, subjectRelation, subject, hydraResponse)
+
+			if subjectStatus == http.StatusOK || subjectStatus == http.StatusForbidden {
+				c.JSON(subjectStatus, subjectResponse)
+				return
+			} else if subjectStatus == http.StatusFailedDependency {
+				c.JSON(subjectStatus, err)
+				return
+			} else {
+				c.JSON(subjectStatus, err.Error())
+			}
+		}
+		c.JSON(ketoStatus, ketoResponse)
+		return
+	} else if ketoStatus == http.StatusForbidden {
 		c.JSON(ketoStatus, ketoResponse)
 		return
 	} else if ketoStatus == http.StatusFailedDependency {
@@ -108,7 +138,7 @@ func (a authController) Check(c *gin.Context) {
 // @Param        subject_set.namespace   query      string  true  "subject_set namespace"
 // @Param        subject_set.object      query      string  true  "subject_set object"
 // @Param        subject_set.relation    query      string  true  "subject_set relation"
-// @Param        Authorization           header     string  true  "Bearer <Bouncer_access_token>" 
+// @Param        Authorization           header     string  true  "Bearer <Bouncer_access_token>"
 // @Success      200             {string}  model.KetoResponse
 // @Failure      400             {object}  model.KetoResponse
 // @Failure      401             {object}  model.KetoResponse
@@ -125,7 +155,7 @@ func (a authController) Query(c *gin.Context) {
 		} else if strings.HasPrefix(query, utils.RelationString) {
 			relation = strings.Split(query, "=")[1]
 			relation, _ = url.QueryUnescape(relation)
-		}  else if strings.HasPrefix(query, utils.ObjectString) {
+		} else if strings.HasPrefix(query, utils.ObjectString) {
 			object = strings.Split(query, "=")[1]
 			object, _ = url.QueryUnescape(object)
 		} else if strings.HasPrefix(query, "subject-id=") {
@@ -144,9 +174,9 @@ func (a authController) Query(c *gin.Context) {
 	}
 
 	var (
-		ketoStatus int
+		ketoStatus   int
 		ketoResponse string
-		err error
+		err          error
 	)
 	if len(subjectId) > 0 {
 		ketoStatus, ketoResponse, err = a.ketoService.ValidatePolicy(c.Request.Context(), namespace, relation, object, subjectId)
@@ -176,7 +206,7 @@ func (a authController) Query(c *gin.Context) {
 // @Param        max-depth      query     integer  true  "max-depth to expand tuple"
 // @Param        object         query     string   true  "resource"
 // @Param        relation       query     string   true  "access-type"
-// @Param        Authorization  header    string   true  "Bearer <Bouncer_access_token>" 
+// @Param        Authorization  header    string   true  "Bearer <Bouncer_access_token>"
 // @Success      200             {string}  model.KetoResponse
 // @Failure      400             {object}  model.KetoResponse
 // @Failure      401             {object}  model.KetoResponse
@@ -186,7 +216,7 @@ func (a authController) Query(c *gin.Context) {
 func (a authController) Expand(c *gin.Context) {
 	var (
 		namespace, relation, object, maxDepth string = "", "", "", ""
-		hasDepth bool = false
+		hasDepth                              bool   = false
 	)
 	queries := strings.Split(c.Request.URL.RawQuery, "&")
 	for _, query := range queries {
@@ -202,7 +232,7 @@ func (a authController) Expand(c *gin.Context) {
 		} else if strings.HasPrefix(query, utils.RelationString) {
 			relation = strings.Split(query, "=")[1]
 			relation, _ = url.QueryUnescape(relation)
-		} 
+		}
 	}
 
 	ketoStatus, ketoResponse, err := a.ketoService.ExpandPolicy(c.Request.Context(), namespace, relation, object, maxDepth, hasDepth)
