@@ -94,7 +94,7 @@ func (a authController) Check(c *gin.Context) {
 	ketoStatus, ketoResponse, err := a.ketoService.ValidatePolicy(c.Request.Context(), namespace, relation, object, hydraResponse)
 
 	if ketoStatus == http.StatusOK {
-		if hasSubject && subject == "" && hasSubjectRelation && subjectRelation == "" {
+		if (hasSubject && subject == "") || (hasSubjectRelation && subjectRelation == "") {
 			log.Error("Invalid query params")
 			c.JSON(http.StatusBadRequest, errors.New("invalid query params"))
 			return
