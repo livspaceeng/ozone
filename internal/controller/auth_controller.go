@@ -99,16 +99,26 @@ func (a authController) Check(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, errors.New("invalid query params"))
 			return
 		} else if len(subject) > 0 && len(subjectRelation) > 0 {
-			subjectStatus, subjectResponse, err := a.ketoService.ValidatePolicy(c.Request.Context(), namespace, subjectRelation, subject, hydraResponse)
+			roles := strings.Split(subject, ",")
+			roleAssigned := []string{}
+			roleAssigned = append(roleAssigned, hydraResponse)
+			for _, role := range roles {
+				roleStatus, roleResponse, err := a.ketoService.ValidatePolicy(c.Request.Context(), namespace, subjectRelation, role, hydraResponse)
 
-			if subjectStatus == http.StatusOK || subjectStatus == http.StatusForbidden {
-				c.JSON(subjectStatus, subjectResponse)
+				if roleStatus == http.StatusFailedDependency || roleStatus >= http.StatusInternalServerError {
+					c.JSON(roleStatus, err.Error())
+					return
+				}
+				if roleStatus == http.StatusOK {
+					roleAssigned = append(roleAssigned, roleResponse)
+				}
+			}
+			if len(roleAssigned) > 1 {
+				c.JSON(http.StatusOK, roleAssigned)
 				return
-			} else if subjectStatus == http.StatusFailedDependency {
-				c.JSON(subjectStatus, err)
+			} else if len(roleAssigned) == 1 {
+				c.JSON(http.StatusForbidden, roleAssigned)
 				return
-			} else {
-				c.JSON(subjectStatus, err.Error())
 			}
 		}
 		c.JSON(ketoStatus, ketoResponse)
