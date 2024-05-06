@@ -102,14 +102,14 @@ func (a authController) Check(c *gin.Context) {
 			roleAssigned := []string{}
 			roleAssigned = append(roleAssigned, hydraResponse)
 			for _, role := range roles {
-				roleStatus, roleResponse, err := a.ketoService.ValidatePolicy(c.Request.Context(), namespace, subjectRelation, role, hydraResponse)
+				roleStatus, _, err := a.ketoService.ValidatePolicy(c.Request.Context(), namespace, subjectRelation, role, hydraResponse)
 
 				if roleStatus == http.StatusFailedDependency || roleStatus >= http.StatusInternalServerError {
 					c.JSON(roleStatus, err.Error())
 					return
 				}
 				if roleStatus == http.StatusOK {
-					roleAssigned = append(roleAssigned, roleResponse)
+					roleAssigned = append(roleAssigned, role)
 				}
 			}
 			if len(roleAssigned) > 1 {
