@@ -94,8 +94,8 @@ func (a authController) Check(c *gin.Context) {
 
 	if ketoStatus == http.StatusOK {
 		if (hasSubject && subject == "") || (hasSubjectRelation && subjectRelation == "") {
-			log.Error("Invalid query params")
-			c.JSON(http.StatusBadRequest, "invalid query params")
+			log.Error(utils.InvalidError)
+			c.JSON(http.StatusBadRequest, utils.InvalidError)
 			return
 		} else if len(subject) > 0 && len(subjectRelation) > 0 {
 			roles := strings.Split(subject, ",")
@@ -104,7 +104,7 @@ func (a authController) Check(c *gin.Context) {
 			for _, role := range roles {
 				roleStatus, _, err := a.ketoService.ValidatePolicy(c.Request.Context(), namespace, subjectRelation, role, hydraResponse)
 
-				if roleStatus == http.StatusFailedDependency || roleStatus >= http.StatusInternalServerError {
+				if roleStatus == http.StatusBadRequest || roleStatus == http.StatusFailedDependency || roleStatus >= http.StatusInternalServerError {
 					c.JSON(roleStatus, err.Error())
 					return
 				}
