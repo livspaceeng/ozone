@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -96,7 +95,7 @@ func (a authController) Check(c *gin.Context) {
 	if ketoStatus == http.StatusOK {
 		if (hasSubject && subject == "") || (hasSubjectRelation && subjectRelation == "") {
 			log.Error("Invalid query params")
-			c.JSON(http.StatusBadRequest, errors.New("invalid query params"))
+			c.JSON(http.StatusBadRequest, "invalid query params")
 			return
 		} else if len(subject) > 0 && len(subjectRelation) > 0 {
 			roles := strings.Split(subject, ",")
