@@ -38,7 +38,7 @@ func NewAuthController(hydraSvc service.HydraService, ketoSvc service.KetoServic
 // @Param        namespace      query      string  true  "namespace"
 // @Param        object         query      string  true  "resource"
 // @Param        relation       query      string  true  "access-type"
-// @Param        hydra          query      string  false "Default value is Bouncer. Use 'accounts' value for Accounts Hydra"
+// @Param        issuer         query      string  false "Default value is Bouncer. Use 'accounts' value for Accounts Hydra"
 // @Param        Authorization  header     string  true  "Bearer <Bouncer_access_token>"
 // @Success      200         {string}  model.KetoResponse
 // @Failure      400         {object}  model.KetoResponse
