@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 	service "github.com/livspaceeng/ozone/internal/services"
 	"github.com/livspaceeng/ozone/internal/utils"
-	log "github.com/sirupsen/logrus"
 )
 
 type AuthController interface {
@@ -52,8 +51,8 @@ func (a authController) Check(c *gin.Context) {
 	headers := c.Request.Header
 	bearer := headers.Get("Authorization")
 	var (
-		namespace, relation, object, subject, subjectRelation, issuer string = "", "", "", "", "", ""
-		hasIssuer, hasSubject, hasSubjectRelation                     bool   = false, false, false
+		namespace, relation, object, issuer string = "", "", "", ""
+		hasIssuer                           bool   = false
 	)
 	queries := strings.Split(c.Request.URL.RawQuery, "&")
 	for _, query := range queries {
@@ -66,14 +65,6 @@ func (a authController) Check(c *gin.Context) {
 		} else if strings.HasPrefix(query, utils.ObjectString) {
 			object = strings.Split(query, "=")[1]
 			object, _ = url.QueryUnescape(object)
-		} else if strings.HasPrefix(query, utils.SubjectString) {
-			hasSubject = true
-			subject = strings.Split(query, "=")[1]
-			subject, _ = url.QueryUnescape(subject)
-		} else if strings.HasPrefix(query, utils.SubjectRelationString) {
-			hasSubjectRelation = true
-			subjectRelation = strings.Split(query, "=")[1]
-			subjectRelation, _ = url.QueryUnescape(subjectRelation)
 		} else if strings.HasPrefix(query, "issuer=") {
 			hasIssuer = true
 			issuer = strings.Split(query, "=")[1]
@@ -92,37 +83,7 @@ func (a authController) Check(c *gin.Context) {
 	//Keto
 	ketoStatus, ketoResponse, err := a.ketoService.ValidatePolicy(c.Request.Context(), namespace, relation, object, hydraResponse)
 
-	if ketoStatus == http.StatusOK {
-		if (hasSubject && subject == "") || (hasSubjectRelation && subjectRelation == "") {
-			log.Error(utils.InvalidError)
-			c.JSON(http.StatusBadRequest, utils.InvalidError)
-			return
-		} else if len(subject) > 0 && len(subjectRelation) > 0 {
-			roles := strings.Split(subject, ",")
-			roleAssigned := []string{}
-			roleAssigned = append(roleAssigned, hydraResponse)
-			for _, role := range roles {
-				roleStatus, _, err := a.ketoService.ValidatePolicy(c.Request.Context(), namespace, subjectRelation, role, hydraResponse)
-
-				if roleStatus == http.StatusBadRequest || roleStatus == http.StatusFailedDependency || roleStatus >= http.StatusInternalServerError {
-					c.JSON(roleStatus, err.Error())
-					return
-				}
-				if roleStatus == http.StatusOK {
-					roleAssigned = append(roleAssigned, role)
-				}
-			}
-			if len(roleAssigned) > 1 {
-				c.JSON(http.StatusOK, roleAssigned)
-				return
-			} else if len(roleAssigned) == 1 {
-				c.JSON(http.StatusForbidden, roleAssigned)
-				return
-			}
-		}
-		c.JSON(ketoStatus, ketoResponse)
-		return
-	} else if ketoStatus == http.StatusForbidden {
+	if ketoStatus == http.StatusOK || ketoStatus == http.StatusForbidden {
 		c.JSON(ketoStatus, ketoResponse)
 		return
 	} else if ketoStatus == http.StatusFailedDependency {
