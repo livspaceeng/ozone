@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/livspaceeng/ozone/configs"
 	docs "github.com/livspaceeng/ozone/docs"
 	"github.com/livspaceeng/ozone/internal/controller"
 	"github.com/livspaceeng/ozone/internal/services"
@@ -16,18 +17,25 @@ import (
 )
 
 var (
-	httpClient                                      = &http.Client{}
-	cacheClient										= cache.New(5*time.Minute, 10*time.Minute)
-	httpClientInterface        utils.HttpClient     = utils.NewHttpClient(httpClient)
-	hydraService		services.HydraService		= services.NewHydraService(httpClient, cacheClient)
-	ketoService			services.KetoService		= services.NewKetoService(httpClient)
+	httpClient                                = &http.Client{}
+	cacheClient                               = cache.New(5*time.Minute, 10*time.Minute)
+	httpClientInterface utils.HttpClient      = utils.NewHttpClient(httpClient)
+	hydraService        services.HydraService = services.NewHydraService(httpClient, cacheClient)
+	ketoService         services.KetoService  = services.NewKetoService(httpClient)
 
-	authController		controller.AuthController 	= controller.NewAuthController(hydraService, ketoService)
-	healthController	controller.HealthController	= controller.NewHealthController()
+	authController   controller.AuthController   = controller.NewAuthController(hydraService, ketoService)
+	healthController controller.HealthController = controller.NewHealthController()
 )
 
 func NewRouter() *gin.Engine {
-	router := gin.Default()
+	config := configs.GetConfig()
+	var router *gin.Engine
+	if config.GetBool("server.release_mode") {
+		gin.SetMode(gin.ReleaseMode)
+		router = gin.New()
+	} else {
+		router = gin.Default()
+	}
 	router.Use(otelgin.Middleware("ozone"))
 	docs.SwaggerInfo.BasePath = "/api/v1"
 
